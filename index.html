@@ -1,0 +1,1002 @@
+<title>Juicio a la IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;800&display=swap">
+<style>
+/* Layout: tribunal-terminal — escenario a la izquierda, tabla de jurados fija a la derecha (arriba en celular). Estética única neon noir. */
+:root{
+  --void:#06050c; --panel:#0c0a18; --panel2:#131029; --line:#2a2352; --line2:#3d3378;
+  --text:#dbe5ff; --dim:#8a8db8; --faint:#55587e;
+  --cyan:#27e7ff; --violet:#a066ff; --green:#3dffa8; --red:#ff3d6e; --amber:#ffc23d;
+  --f-display:"Chakra Petch","Orbitron","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--void);color:var(--text);font-family:var(--f-display);font-size:15px;line-height:1.5;overflow-x:hidden}
+*{box-sizing:border-box}
+button,input{font:inherit;color:inherit}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.scan{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,transparent 50%,rgba(0,0,0,.65))}
+#app{position:relative;z-index:2;min-height:100%;display:flex;flex-direction:column;padding-inline:16px;padding-block:0 24px}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand b{font-weight:700;letter-spacing:.18em;font-size:14px;color:var(--cyan);text-shadow:0 0 12px rgba(39,231,255,.6)}
+.brand span{font-family:var(--f-mono);font-size:11px;color:var(--dim);letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;padding:5px 9px;border:1px solid var(--line2);border-radius:3px;color:var(--dim);display:inline-flex;align-items:center;gap:6px;background:rgba(12,10,24,.7)}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--faint);display:inline-block}
+.chip.on i{background:var(--green);box-shadow:0 0 8px var(--green)}
+.chip.warn i{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.chip.code{color:var(--cyan);border-color:rgba(39,231,255,.5)}
+.ibtn{background:rgba(12,10,24,.7);border:1px solid var(--line2);border-radius:3px;padding:5px 10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--text);cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.ibtn:hover,.ibtn:focus-visible{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 14px rgba(39,231,255,.35);outline:none}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:start;flex:1}
+#stage{min-width:0;position:relative}
+.screen{animation:screenIn .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes screenIn{from{opacity:.0;transform:translateY(10px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+
+/* glitch title */
+.glitch{position:relative;display:inline-block;font-weight:700;letter-spacing:.06em;line-height:1;text-wrap:balance}
+.glitch::before,.glitch::after{content:attr(data-t);position:absolute;inset:0;pointer-events:none}
+.glitch::before{color:var(--cyan);transform:translate(2px,0);clip-path:inset(0 0 60% 0);animation:gl1 3.2s infinite steps(1);opacity:.8}
+.glitch::after{color:var(--red);transform:translate(-2px,0);clip-path:inset(55% 0 0 0);animation:gl2 2.7s infinite steps(1);opacity:.8}
+@keyframes gl1{0%,92%{transform:translate(0,0);clip-path:inset(0 0 100% 0)}93%{transform:translate(3px,-1px);clip-path:inset(10% 0 55% 0)}95%{transform:translate(-3px,1px);clip-path:inset(40% 0 30% 0)}97%{transform:translate(2px,0);clip-path:inset(70% 0 5% 0)}}
+@keyframes gl2{0%,88%{transform:translate(0,0);clip-path:inset(100% 0 0 0)}89%{transform:translate(-4px,1px);clip-path:inset(60% 0 10% 0)}91%{transform:translate(3px,0);clip-path:inset(20% 0 60% 0)}93%{transform:translate(0,0);clip-path:inset(100% 0 0 0)}}
+
+/* intro */
+.hero{display:grid;gap:18px;padding-block:8px 10px}
+.kicker{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;color:var(--violet);text-transform:uppercase}
+.hero h1{font-size:clamp(44px,9vw,96px);margin:0;color:#fff;text-shadow:0 0 22px rgba(160,102,255,.55),0 0 2px #fff}
+.lede{font-size:18px;color:var(--text);max-width:52ch;margin:0}
+.lede em{font-style:normal;color:var(--cyan)}
+#coreAnchorIntro{height:170px}
+.panel{background:linear-gradient(180deg,rgba(19,16,41,.86),rgba(12,10,24,.86));border:1px solid var(--line);border-radius:4px;padding:18px;position:relative;backdrop-filter:blur(3px)}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;width:14px;height:14px;border-left:2px solid var(--cyan);border-top:2px solid var(--cyan)}
+.panel::after{content:"";position:absolute;right:-1px;bottom:-1px;width:14px;height:14px;border-right:2px solid var(--violet);border-bottom:2px solid var(--violet)}
+.field{display:grid;gap:6px}
+.field label{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.inp{background:rgba(6,5,12,.8);border:1px solid var(--line2);border-radius:3px;padding:11px 12px;font-family:var(--f-mono);font-size:15px;color:#fff;width:100%;min-width:0;transition:border-color .2s,box-shadow .2s}
+.inp:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 18px rgba(39,231,255,.25)}
+.inp.code{text-transform:uppercase;letter-spacing:.35em;text-align:center;font-weight:800}
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.btn{position:relative;cursor:pointer;border:1px solid var(--cyan);background:rgba(39,231,255,.08);color:#fff;padding:12px 16px;border-radius:3px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:13px;overflow:hidden;transition:transform .12s,box-shadow .2s,background .2s}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);transform:translateX(-120%);transition:transform .5s}
+.btn:hover::after{transform:translateX(120%)}
+.btn:hover,.btn:focus-visible{box-shadow:0 0 0 1px var(--cyan),0 0 22px rgba(39,231,255,.45);outline:none}
+.btn:active{transform:scale(.97)}
+.btn.v{border-color:var(--violet);background:rgba(160,102,255,.1)}
+.btn.v:hover,.btn.v:focus-visible{box-shadow:0 0 0 1px var(--violet),0 0 22px rgba(160,102,255,.5)}
+.btn.g{border-color:var(--green);background:rgba(61,255,168,.08)}
+.btn.g:hover,.btn.g:focus-visible{box-shadow:0 0 0 1px var(--green),0 0 22px rgba(61,255,168,.45)}
+.btn.ghost{border-color:var(--line2);background:transparent;color:var(--dim)}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.join{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:4px}
+.rule{border-top:1px solid var(--line2);padding-top:8px;font-size:13px;color:var(--dim)}
+.rule b{display:block;font-family:var(--f-mono);font-size:20px;color:var(--cyan);font-weight:800;letter-spacing:.02em}
+.stack{display:grid;gap:14px}
+
+/* lobby */
+.bigcode{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bigcode .code{font-family:var(--f-mono);font-weight:800;font-size:clamp(46px,10vw,84px);letter-spacing:.22em;color:#fff;text-shadow:0 0 18px var(--cyan),0 0 40px rgba(39,231,255,.4);line-height:1}
+.jurors{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.juror{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:3px;font-size:13px;animation:pop .4s cubic-bezier(.2,1.6,.4,1);min-width:0}
+.juror span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 8px currentColor;background:currentColor}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--dim);cursor:pointer}
+.check input{accent-color:var(--violet);width:16px;height:16px}
+
+/* case */
+.casehead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start}
+.expno{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;color:var(--violet)}
+.casehead h2{margin:6px 0 4px;font-size:clamp(26px,4.4vw,40px);line-height:1.05;color:#fff;text-wrap:balance}
+.place{font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.timer{position:relative;width:78px;height:78px;flex:none}
+.timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+.timer circle{fill:none;stroke-width:5}
+.timer .trk{stroke:var(--line)}
+.timer .bar{stroke:var(--cyan);stroke-linecap:round;filter:drop-shadow(0 0 6px var(--cyan));transition:stroke .3s}
+.timer .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);font-weight:800;font-size:24px;font-variant-numeric:tabular-nums}
+.timer.low .bar{stroke:var(--red);filter:drop-shadow(0 0 8px var(--red))}
+.timer.low .num{color:var(--red);animation:throb .5s infinite alternate}
+@keyframes throb{to{transform:scale(1.14)}}
+.story{font-size:16px;max-width:68ch;margin:14px 0 0}
+.ia{margin-top:14px;border:1px solid rgba(160,102,255,.45);background:rgba(160,102,255,.07);border-radius:3px;padding:12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.ia .tag{font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;color:var(--violet);border:1px solid var(--violet);padding:3px 6px;border-radius:2px;white-space:nowrap}
+.ia p{margin:0;font-family:var(--f-mono);font-size:14px;color:#e5d7ff;min-height:1.5em}
+.ia p .cur{display:inline-block;width:8px;height:1em;background:var(--violet);vertical-align:-2px;animation:blink .7s steps(1) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.ask{margin:18px 0 10px;font-weight:600;letter-spacing:.06em}
+.ask small{display:block;font-weight:400;color:var(--dim);letter-spacing:0;font-size:13px}
+.actors{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.actor{text-align:left;cursor:pointer;border:1px solid var(--line2);background:rgba(12,10,24,.85);border-radius:3px;padding:12px 12px 12px 40px;position:relative;font-size:14px;line-height:1.3;transition:border-color .15s,box-shadow .2s,transform .15s,background .2s;min-height:62px}
+.actor::before{content:"";position:absolute;left:12px;top:50%;width:16px;height:16px;margin-top:-8px;border:1px solid var(--dim);border-radius:2px;transition:all .15s}
+.actor:hover:not(:disabled),.actor:focus-visible{border-color:var(--cyan);transform:translateY(-2px);outline:none;box-shadow:0 6px 20px rgba(39,231,255,.12)}
+.actor.sel{border-color:var(--cyan);background:rgba(39,231,255,.12);box-shadow:0 0 0 1px var(--cyan),0 0 22px rgba(39,231,255,.3)}
+.actor.sel::before{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.actor:disabled{cursor:default}
+.actor small{display:block;color:var(--dim);font-size:12px;margin-top:3px}
+.casefoot{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:16px}
+.casefoot .btn{min-width:220px}
+.status{font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.locked{font-family:var(--f-mono);font-size:13px;color:var(--green);letter-spacing:.08em}
+.tmini{font-family:var(--f-mono);font-weight:800;font-size:18px;color:var(--cyan);font-variant-numeric:tabular-nums;min-width:3ch}
+.tmini.low{color:var(--red)}
+
+/* reveal */
+.stamp{display:inline-block;font-family:var(--f-mono);font-weight:800;font-size:clamp(20px,4vw,30px);letter-spacing:.16em;padding:6px 14px;border:3px solid var(--red);color:var(--red);transform:rotate(-4deg);text-shadow:0 0 12px var(--red);box-shadow:0 0 22px rgba(255,61,110,.35),inset 0 0 18px rgba(255,61,110,.2)}
+.stamp.anim{animation:stamp .55s cubic-bezier(.2,1.8,.4,1)}
+@keyframes stamp{0%{transform:rotate(-4deg) scale(3);opacity:0}60%{opacity:1}100%{transform:rotate(-4deg) scale(1)}}
+.verdicts{display:grid;gap:8px;margin-top:16px}
+.vrow{display:grid;grid-template-columns:28px minmax(0,1fr) 120px;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:rgba(12,10,24,.8)}
+.vrow.ok{border-color:rgba(61,255,168,.55);background:rgba(61,255,168,.06)}
+.vrow .ico{font-family:var(--f-mono);font-weight:800;text-align:center}
+.vrow.ok .ico{color:var(--green)}
+.vrow.no .ico{color:var(--faint)}
+.vrow .nm{font-size:14px;min-width:0}
+.vrow .nm em{font-style:normal;font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;color:var(--cyan);border:1px solid var(--cyan);border-radius:2px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+.vrow .nm em.bad{color:var(--red);border-color:var(--red)}
+.pbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;position:relative}
+.pbar b{position:absolute;inset:0 auto 0 0;background:var(--violet);box-shadow:0 0 8px var(--violet);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.pct{font-family:var(--f-mono);font-size:11px;color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
+.why{margin-top:16px;display:grid;gap:10px}
+.why p{margin:0;max-width:70ch}
+.norm{font-family:var(--f-mono);font-size:12px;color:var(--amber);border-left:2px solid var(--amber);padding-left:10px}
+.gain{font-family:var(--f-mono);font-weight:800;font-size:28px;color:var(--green);text-shadow:0 0 14px var(--green)}
+.gain.zero{color:var(--faint);text-shadow:none}
+.floaty{position:fixed;z-index:50;pointer-events:none;font-family:var(--f-mono);font-weight:800;font-size:26px;color:var(--green);text-shadow:0 0 12px var(--green);animation:floaty 1.4s ease-out forwards}
+@keyframes floaty{to{transform:translateY(-70px);opacity:0}}
+
+/* end */
+.podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end;margin-top:12px}
+.pod{border:1px solid var(--line2);border-radius:3px 3px 0 0;text-align:center;padding:10px 6px;display:grid;gap:4px;align-content:end;background:linear-gradient(0deg,rgba(160,102,255,.18),transparent);animation:rise .9s cubic-bezier(.2,.9,.2,1) both;min-width:0}
+.pod .n{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pod .s{font-family:var(--f-mono);font-weight:800;color:var(--cyan)}
+.pod .r{font-family:var(--f-mono);font-size:30px;font-weight:800}
+.pod.p1{height:190px;border-color:var(--amber);background:linear-gradient(0deg,rgba(255,194,61,.22),transparent);animation-delay:.6s}
+.pod.p1 .r{color:var(--amber);text-shadow:0 0 14px var(--amber)}
+.pod.p2{height:150px;animation-delay:.3s}
+.pod.p3{height:120px}
+@keyframes rise{from{transform:scaleY(0);transform-origin:bottom;opacity:0}to{transform:scaleY(1);opacity:1}}
+.thesis{font-size:17px;max-width:62ch;margin:0}
+.thesis b{color:var(--green)}
+
+/* scoreboard */
+#board{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.bhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.bhead h3{margin:0;font-size:13px;letter-spacing:.18em;color:var(--cyan)}
+.bhead .chip{padding:3px 7px}
+#toggleBoard{display:none}
+.rows{position:relative;display:grid;gap:5px;max-height:calc(100vh - 170px);overflow-y:auto;padding-right:2px}
+.row{display:grid;grid-template-columns:26px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:7px 9px;border:1px solid var(--line);border-radius:3px;background:rgba(12,10,24,.85);font-size:13px;transition:background .3s,border-color .3s}
+.row.me{border-color:var(--cyan);background:rgba(39,231,255,.09)}
+.row.lead{border-color:rgba(255,194,61,.6)}
+.row .rk{font-family:var(--f-mono);font-weight:800;color:var(--dim);font-variant-numeric:tabular-nums}
+.row.lead .rk{color:var(--amber)}
+.row .nm{display:flex;align-items:center;gap:7px;min-width:0}
+.row .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .nm small{font-family:var(--f-mono);font-size:9px;color:var(--cyan);letter-spacing:.1em}
+.row .sc{font-family:var(--f-mono);font-weight:800;font-variant-numeric:tabular-nums;color:#fff}
+.row .st{font-family:var(--f-mono);font-size:11px;width:14px;text-align:center;color:var(--faint)}
+.row .st.ok{color:var(--green)}
+.row.bump{animation:bump .6s}
+@keyframes bump{30%{background:rgba(61,255,168,.25)}}
+.empty{font-size:13px;color:var(--dim);border:1px dashed var(--line2);border-radius:3px;padding:14px;text-align:center}
+.bfoot{font-family:var(--f-mono);font-size:10px;color:var(--faint);margin-top:8px;letter-spacing:.06em}
+
+/* overlay panel */
+.overlay{position:fixed;inset:0;z-index:60;background:rgba(3,2,8,.82);backdrop-filter:blur(4px);display:grid;place-items:start center;overflow-y:auto;padding:24px 16px}
+.overlay .panel{width:min(760px,100%);display:grid;gap:14px}
+.overlay h3{margin:0;font-size:20px;letter-spacing:.1em;color:#fff}
+.conn{border:1px solid var(--line2);border-radius:3px;padding:14px;display:grid;gap:8px}
+.conn h4{margin:0;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.conn p,.conn li{font-size:14px;color:var(--dim);margin:0}
+.conn ol{margin:0;padding-left:18px;display:grid;gap:4px}
+pre.code{margin:0;background:#04030a;border:1px solid var(--line);border-radius:3px;padding:10px;font-family:var(--f-mono);font-size:12px;color:var(--green);overflow-x:auto}
+.row2{display:flex;gap:8px;flex-wrap:wrap}
+.row2 .inp{flex:1 1 240px}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);z-index:70;font-family:var(--f-mono);font-size:13px;background:var(--panel2);border:1px solid var(--cyan);color:#fff;padding:10px 16px;border-radius:3px;box-shadow:0 0 20px rgba(39,231,255,.35);max-width:calc(100% - 32px);transition:opacity .3s,transform .3s}
+#toast.hide{opacity:0;transform:translate(-50%,10px);pointer-events:none}
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translate(-4px,1px)}40%{transform:translate(4px,-1px)}60%{transform:translate(-3px,0)}80%{transform:translate(2px,1px)}}
+.flash{position:fixed;inset:0;z-index:40;pointer-events:none;animation:flash .5s ease-out forwards}
+@keyframes flash{from{opacity:.55}to{opacity:0}}
+
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  #board{order:-1;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(6,5,12,.94);margin-inline:-16px;padding:8px 16px;border-bottom:1px solid var(--line)}
+  #toggleBoard{display:inline-flex}
+  .bhead{margin-bottom:6px}
+  #board.collapsed .rows{max-height:none;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  #board.collapsed .row{padding:5px 8px}
+  #board.collapsed .row.hideMini{display:none}
+  #board:not(.collapsed) .rows{max-height:50vh}
+  .bfoot{display:none}
+  #board.collapsed .row .nm small{display:none}
+  .casefoot{position:sticky;bottom:0;z-index:4;background:rgba(6,5,12,.95);margin-inline:-16px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+  .casefoot .btn{min-width:0;flex:1}
+  #coreAnchorIntro{height:120px}
+  .vrow{grid-template-columns:24px minmax(0,1fr) 70px}
+}
+@media (max-width:480px){
+  .casehead{grid-template-columns:minmax(0,1fr) 64px}
+  .timer{width:64px;height:64px}
+  .actors{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="scan" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div id="app">
+  <header class="top">
+    <div class="brand"><b>JUICIO&nbsp;A&nbsp;LA&nbsp;IA</b><span>TRIBUNAL ALGORÍTMICO // DIA</span></div>
+    <span class="chip code" id="codeChip" hidden>SALA <strong id="codeChipTxt"></strong></span>
+    <span class="chip" id="netChip"><i></i><span id="netTxt">SIN CONEXIÓN · MODO SOLO</span></span>
+    <button class="ibtn" id="btnSound" type="button" aria-pressed="true">SONIDO: ON</button>
+    <button class="ibtn" id="btnConn" type="button">CONECTORES</button>
+  </header>
+
+  <div class="layout">
+    <main id="stage" aria-live="polite"></main>
+
+    <aside id="board" class="collapsed" aria-label="Tabla de puntajes">
+      <div class="bhead">
+        <h3>JURADOS</h3>
+        <span class="chip" id="boardCount">0 / 40</span>
+        <button class="ibtn" id="toggleBoard" type="button">VER TODO</button>
+      </div>
+      <div class="rows" id="rows"></div>
+      <div class="bfoot" id="bfoot">Los puntajes se actualizan al leer cada sentencia.</div>
+    </aside>
+  </div>
+</div>
+
+<div id="toast" class="hide" role="status"></div>
+
+<div class="overlay" id="connPanel" hidden>
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <h3>CONECTORES MULTIJUGADOR</h3>
+      <button class="ibtn" id="closeConn" type="button">CERRAR ✕</button>
+    </div>
+    <p style="margin:0;color:var(--dim);font-size:14px">El juego elige solo el conector disponible. Quien crea la sala y quienes se unen tienen que abrir el juego desde el mismo lugar (el mismo enlace o la misma página publicada).</p>
+
+    <div class="conn">
+      <h4><span class="chip" id="cClaude"><i></i><span>—</span></span> Salas de Claude</h4>
+      <p>Funciona cuando el juego se abre desde su enlace de claude.ai. Pueden entrar las personas con acceso a ese enlace: miembros de tu organización o invitados. No hace falta configurar nada.</p>
+    </div>
+
+    <div class="conn">
+      <h4><span class="chip" id="cPeer"><i></i><span>—</span></span> Conexión directa (sin cuenta, recomendado para GitHub Pages)</h4>
+      <p>No hay que configurar nada. La compu del juez funciona como servidor de la partida: los celulares se conectan directo a ella usando el servidor gratuito de PeerJS para encontrarse.</p>
+      <ol>
+        <li>La pestaña de quien creó la sala tiene que quedar abierta toda la partida, idealmente en la compu que proyecta.</li>
+        <li>Necesita internet. Si alguna red escolar bloquea la conexión, probá con los datos móviles del celular.</li>
+      </ol>
+    </div>
+
+    <div class="conn">
+      <h4><span class="chip" id="cFb"><i></i><span>—</span></span> Firebase Realtime Database (aula, GitHub Pages)</h4>
+      <p>Opcional: si la cargás, el juego la usa en vez de la conexión directa. Si llegaste al límite de proyectos, podés usar la base de un proyecto que ya tengas: el juego guarda todo en su propia carpeta «juicio».</p>
+      <ol>
+        <li>En console.firebase.google.com abrí tu proyecto (o creá uno) y entrá a <b>Realtime Database</b> → Crear base de datos.</li>
+        <li>En la pestaña <b>Reglas</b>, pegá esto y publicá:</li>
+      </ol>
+<pre class="code" id="rulesTxt">{
+  "rules": {
+    "juicio": {
+      "$sala": { ".read": true, ".write": true }
+    }
+  }
+}</pre>
+      <div class="row2"><button class="ibtn" id="copyRules" type="button">COPIAR REGLAS</button></div>
+      <ol start="3">
+        <li>Copiá la URL de la base (termina en <b>firebaseio.com</b> o <b>firebasedatabase.app</b>) y pegala acá:</li>
+      </ol>
+      <div class="row2">
+        <input class="inp" id="fbUrl" type="url" placeholder="https://tu-proyecto-default-rtdb.firebaseio.com" autocomplete="off">
+        <button class="btn g" id="fbSave" type="button">GUARDAR Y PROBAR</button>
+      </div>
+      <p id="fbMsg"></p>
+      <p>Para que todos tus estudiantes la tengan sin configurar nada, abrí el .html con un editor y pegá la URL en la línea <b>const FIREBASE_URL = ""</b> antes de subirlo.</p>
+    </div>
+  </div>
+</div>
+
+<script>/* PeerJS 1.5.5 · MIT · https://peerjs.com — incrustado para no depender de un CDN */
+(()=>{function e(e,t,n,r){Object.defineProperty(e,t,{get:n,set:r,enumerable:!0,configurable:!0})}function t(e){return e&&e.__esModule?e.default:e}class n{constructor(){this.chunkedMTU=16300,this._dataCount=1,this.chunk=e=>{let t=[],n=e.byteLength,r=Math.ceil(n/this.chunkedMTU),i=0,s=0;for(;s<n;){let o=Math.min(n,s+this.chunkedMTU),a=e.slice(s,o),c={__peerData:this._dataCount,n:i,data:a,total:r};t.push(c),s=o,i++}return this._dataCount++,t}}}class r{append_buffer(e){this.flush(),this._parts.push(e)}append(e){this._pieces.push(e)}flush(){if(this._pieces.length>0){let e=new Uint8Array(this._pieces);this._parts.push(e),this._pieces=[]}}toArrayBuffer(){let e=[];for(let t of this._parts)e.push(t);return function(e){let t=0;for(let n of e)t+=n.byteLength;let n=new Uint8Array(t),r=0;for(let t of e){let e=new Uint8Array(t.buffer,t.byteOffset,t.byteLength);n.set(e,r),r+=t.byteLength}return n}(e).buffer}constructor(){this.encoder=new TextEncoder,this._pieces=[],this._parts=[]}}function i(e){return new o(e).unpack()}function s(e){let t=new a,n=t.pack(e);return n instanceof Promise?n.then(()=>t.getBuffer()):t.getBuffer()}class o{unpack(){let e,t=this.unpack_uint8();if(t<128)return t;if((224^t)<32)return(224^t)-32;if((e=160^t)<=15)return this.unpack_raw(e);if((e=176^t)<=15)return this.unpack_string(e);if((e=144^t)<=15)return this.unpack_array(e);if((e=128^t)<=15)return this.unpack_map(e);switch(t){case 192:return null;case 193:case 212:case 213:case 214:case 215:return;case 194:return!1;case 195:return!0;case 202:return this.unpack_float();case 203:return this.unpack_double();case 204:return this.unpack_uint8();case 205:return this.unpack_uint16();case 206:return this.unpack_uint32();case 207:return this.unpack_uint64();case 208:return this.unpack_int8();case 209:return this.unpack_int16();case 210:return this.unpack_int32();case 211:return this.unpack_int64();case 216:return e=this.unpack_uint16(),this.unpack_string(e);case 217:return e=this.unpack_uint32(),this.unpack_string(e);case 218:return e=this.unpack_uint16(),this.unpack_raw(e);case 219:return e=this.unpack_uint32(),this.unpack_raw(e);case 220:return e=this.unpack_uint16(),this.unpack_array(e);case 221:return e=this.unpack_uint32(),this.unpack_array(e);case 222:return e=this.unpack_uint16(),this.unpack_map(e);case 223:return e=this.unpack_uint32(),this.unpack_map(e)}}unpack_uint8(){let e=255&this.dataView[this.index];return this.index++,e}unpack_uint16(){let e=this.read(2),t=(255&e[0])*256+(255&e[1]);return this.index+=2,t}unpack_uint32(){let e=this.read(4),t=((256*e[0]+e[1])*256+e[2])*256+e[3];return this.index+=4,t}unpack_uint64(){let e=this.read(8),t=((((((256*e[0]+e[1])*256+e[2])*256+e[3])*256+e[4])*256+e[5])*256+e[6])*256+e[7];return this.index+=8,t}unpack_int8(){let e=this.unpack_uint8();return e<128?e:e-256}unpack_int16(){let e=this.unpack_uint16();return e<32768?e:e-65536}unpack_int32(){let e=this.unpack_uint32();return e<0x80000000?e:e-0x100000000}unpack_int64(){let e=this.unpack_uint64();return e<0x8000000000000000?e:e-0xffffffffffffffff}unpack_raw(e){if(this.length<this.index+e)throw Error(`BinaryPackFailure: index is out of range ${this.index} ${e} ${this.length}`);let t=this.dataBuffer.slice(this.index,this.index+e);return this.index+=e,t}unpack_string(e){let t,n,r=this.read(e),i=0,s="";for(;i<e;)(t=r[i])<160?(n=t,i++):(192^t)<32?(n=(31&t)<<6|63&r[i+1],i+=2):(224^t)<16?(n=(15&t)<<12|(63&r[i+1])<<6|63&r[i+2],i+=3):(n=(7&t)<<18|(63&r[i+1])<<12|(63&r[i+2])<<6|63&r[i+3],i+=4),s+=String.fromCodePoint(n);return this.index+=e,s}unpack_array(e){let t=Array(e);for(let n=0;n<e;n++)t[n]=this.unpack();return t}unpack_map(e){let t={};for(let n=0;n<e;n++)t[this.unpack()]=this.unpack();return t}unpack_float(){let e=this.unpack_uint32();return(0==e>>31?1:-1)*(8388607&e|8388608)*2**((e>>23&255)-127-23)}unpack_double(){let e=this.unpack_uint32(),t=this.unpack_uint32(),n=(e>>20&2047)-1023;return(0==e>>31?1:-1)*((1048575&e|1048576)*2**(n-20)+t*2**(n-52))}read(e){let t=this.index;if(t+e<=this.length)return this.dataView.subarray(t,t+e);throw Error("BinaryPackFailure: read index out of range")}constructor(e){this.index=0,this.dataBuffer=e,this.dataView=new Uint8Array(this.dataBuffer),this.length=this.dataBuffer.byteLength}}class a{getBuffer(){return this._bufferBuilder.toArrayBuffer()}pack(e){if("string"==typeof e)this.pack_string(e);else if("number"==typeof e)Math.floor(e)===e?this.pack_integer(e):this.pack_double(e);else if("boolean"==typeof e)!0===e?this._bufferBuilder.append(195):!1===e&&this._bufferBuilder.append(194);else if(void 0===e)this._bufferBuilder.append(192);else if("object"==typeof e)if(null===e)this._bufferBuilder.append(192);else{let t=e.constructor;if(e instanceof Array){let t=this.pack_array(e);if(t instanceof Promise)return t.then(()=>this._bufferBuilder.flush())}else if(e instanceof ArrayBuffer)this.pack_bin(new Uint8Array(e));else if("BYTES_PER_ELEMENT"in e)this.pack_bin(new Uint8Array(e.buffer,e.byteOffset,e.byteLength));else if(e instanceof Date)this.pack_string(e.toString());else if(e instanceof Blob)return e.arrayBuffer().then(e=>{this.pack_bin(new Uint8Array(e)),this._bufferBuilder.flush()});else if(t==Object||t.toString().startsWith("class")){let t=this.pack_object(e);if(t instanceof Promise)return t.then(()=>this._bufferBuilder.flush())}else throw Error(`Type "${t.toString()}" not yet supported`)}else throw Error(`Type "${typeof e}" not yet supported`);this._bufferBuilder.flush()}pack_bin(e){let t=e.length;if(t<=15)this.pack_uint8(160+t);else if(t<=65535)this._bufferBuilder.append(218),this.pack_uint16(t);else if(t<=0xffffffff)this._bufferBuilder.append(219),this.pack_uint32(t);else throw Error("Invalid length");this._bufferBuilder.append_buffer(e)}pack_string(e){let t=this._textEncoder.encode(e),n=t.length;if(n<=15)this.pack_uint8(176+n);else if(n<=65535)this._bufferBuilder.append(216),this.pack_uint16(n);else if(n<=0xffffffff)this._bufferBuilder.append(217),this.pack_uint32(n);else throw Error("Invalid length");this._bufferBuilder.append_buffer(t)}pack_array(e){let t=e.length;if(t<=15)this.pack_uint8(144+t);else if(t<=65535)this._bufferBuilder.append(220),this.pack_uint16(t);else if(t<=0xffffffff)this._bufferBuilder.append(221),this.pack_uint32(t);else throw Error("Invalid length");let n=r=>{if(r<t){let t=this.pack(e[r]);return t instanceof Promise?t.then(()=>n(r+1)):n(r+1)}};return n(0)}pack_integer(e){if(e>=-32&&e<=127)this._bufferBuilder.append(255&e);else if(e>=0&&e<=255)this._bufferBuilder.append(204),this.pack_uint8(e);else if(e>=-128&&e<=127)this._bufferBuilder.append(208),this.pack_int8(e);else if(e>=0&&e<=65535)this._bufferBuilder.append(205),this.pack_uint16(e);else if(e>=-32768&&e<=32767)this._bufferBuilder.append(209),this.pack_int16(e);else if(e>=0&&e<=0xffffffff)this._bufferBuilder.append(206),this.pack_uint32(e);else if(e>=-0x80000000&&e<=0x7fffffff)this._bufferBuilder.append(210),this.pack_int32(e);else if(e>=-0x8000000000000000&&e<=0x8000000000000000)this._bufferBuilder.append(211),this.pack_int64(e);else if(e>=0&&e<=0xffffffffffffffff)this._bufferBuilder.append(207),this.pack_uint64(e);else throw Error("Invalid integer")}pack_double(e){let t=0;e<0&&(t=1,e=-e);let n=Math.floor(Math.log(e)/Math.LN2),r=Math.floor((e/2**n-1)*0x10000000000000),i=t<<31|n+1023<<20|r/0x100000000&1048575;this._bufferBuilder.append(203),this.pack_int32(i),this.pack_int32(r%0x100000000)}pack_object(e){let t=Object.keys(e),n=t.length;if(n<=15)this.pack_uint8(128+n);else if(n<=65535)this._bufferBuilder.append(222),this.pack_uint16(n);else if(n<=0xffffffff)this._bufferBuilder.append(223),this.pack_uint32(n);else throw Error("Invalid length");let r=n=>{if(n<t.length){let i=t[n];if(e.hasOwnProperty(i)){this.pack(i);let t=this.pack(e[i]);if(t instanceof Promise)return t.then(()=>r(n+1))}return r(n+1)}};return r(0)}pack_uint8(e){this._bufferBuilder.append(e)}pack_uint16(e){this._bufferBuilder.append(e>>8),this._bufferBuilder.append(255&e)}pack_uint32(e){let t=0|e;this._bufferBuilder.append((0xff000000&t)>>>24),this._bufferBuilder.append((0xff0000&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t)}pack_uint64(e){let t=e/0x100000000,n=e%0x100000000;this._bufferBuilder.append((0xff000000&t)>>>24),this._bufferBuilder.append((0xff0000&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t),this._bufferBuilder.append((0xff000000&n)>>>24),this._bufferBuilder.append((0xff0000&n)>>>16),this._bufferBuilder.append((65280&n)>>>8),this._bufferBuilder.append(255&n)}pack_int8(e){this._bufferBuilder.append(255&e)}pack_int16(e){this._bufferBuilder.append((65280&e)>>8),this._bufferBuilder.append(255&e)}pack_int32(e){this._bufferBuilder.append(e>>>24&255),this._bufferBuilder.append((0xff0000&e)>>>16),this._bufferBuilder.append((65280&e)>>>8),this._bufferBuilder.append(255&e)}pack_int64(e){let t=Math.floor(e/0x100000000),n=e%0x100000000;this._bufferBuilder.append((0xff000000&t)>>>24),this._bufferBuilder.append((0xff0000&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t),this._bufferBuilder.append((0xff000000&n)>>>24),this._bufferBuilder.append((0xff0000&n)>>>16),this._bufferBuilder.append((65280&n)>>>8),this._bufferBuilder.append(255&n)}constructor(){this._bufferBuilder=new r,this._textEncoder=new TextEncoder}}"use strict";let c=!0,p=!0;function d(e,t,n){let r=e.match(t);return r&&r.length>=n&&parseInt(r[n],10)}function l(e,t,n){if(!e.RTCPeerConnection)return;let r=e.RTCPeerConnection.prototype,i=r.addEventListener;r.addEventListener=function(e,r){if(e!==t)return i.apply(this,arguments);let s=e=>{let t=n(e);t&&(r.handleEvent?r.handleEvent(t):r(t))};return this._eventMap=this._eventMap||{},this._eventMap[t]||(this._eventMap[t]=new Map),this._eventMap[t].set(r,s),i.apply(this,[e,s])};let s=r.removeEventListener;r.removeEventListener=function(e,n){if(e!==t||!this._eventMap||!this._eventMap[t]||!this._eventMap[t].has(n))return s.apply(this,arguments);let r=this._eventMap[t].get(n);return this._eventMap[t].delete(n),0===this._eventMap[t].size&&delete this._eventMap[t],0===Object.keys(this._eventMap).length&&delete this._eventMap,s.apply(this,[e,r])},Object.defineProperty(r,"on"+t,{get(){return this["_on"+t]},set(e){this["_on"+t]&&(this.removeEventListener(t,this["_on"+t]),delete this["_on"+t]),e&&this.addEventListener(t,this["_on"+t]=e)},enumerable:!0,configurable:!0})}function h(e){return"boolean"!=typeof e?Error("Argument type: "+typeof e+". Please use a boolean."):(c=e,e?"adapter.js logging disabled":"adapter.js logging enabled")}function u(e){return"boolean"!=typeof e?Error("Argument type: "+typeof e+". Please use a boolean."):(p=!e,"adapter.js deprecation warnings "+(e?"disabled":"enabled"))}function f(){"object"==typeof window&&(c||"undefined"!=typeof console&&"function"==typeof console.log&&console.log.apply(console,arguments))}function m(e,t){p&&console.warn(e+" is deprecated, please use "+t+" instead.")}function _(e){return"[object Object]"===Object.prototype.toString.call(e)}function g(e,t,n){let r=n?"outbound-rtp":"inbound-rtp",i=new Map;if(null===t)return i;let s=[];return e.forEach(e=>{"track"===e.type&&e.trackIdentifier===t.id&&s.push(e)}),s.forEach(t=>{e.forEach(n=>{n.type===r&&n.trackId===t.id&&function e(t,n,r){!n||r.has(n.id)||(r.set(n.id,n),Object.keys(n).forEach(i=>{i.endsWith("Id")?e(t,t.get(n[i]),r):i.endsWith("Ids")&&n[i].forEach(n=>{e(t,t.get(n),r)})}))}(e,n,i)})}),i}"use strict";var y={};function C(e,t){let n=e&&e.navigator;if(!n.mediaDevices)return;let r=function(e){if("object"!=typeof e||e.mandatory||e.optional)return e;let t={};return Object.keys(e).forEach(n=>{if("require"===n||"advanced"===n||"mediaSource"===n)return;let r="object"==typeof e[n]?e[n]:{ideal:e[n]};void 0!==r.exact&&"number"==typeof r.exact&&(r.min=r.max=r.exact);let i=function(e,t){return e?e+t.charAt(0).toUpperCase()+t.slice(1):"deviceId"===t?"sourceId":t};if(void 0!==r.ideal){t.optional=t.optional||[];let e={};"number"==typeof r.ideal?(e[i("min",n)]=r.ideal,t.optional.push(e),(e={})[i("max",n)]=r.ideal):e[i("",n)]=r.ideal,t.optional.push(e)}void 0!==r.exact&&"number"!=typeof r.exact?(t.mandatory=t.mandatory||{},t.mandatory[i("",n)]=r.exact):["min","max"].forEach(e=>{void 0!==r[e]&&(t.mandatory=t.mandatory||{},t.mandatory[i(e,n)]=r[e])})}),e.advanced&&(t.optional=(t.optional||[]).concat(e.advanced)),t},i=function(e,i){if(t.version>=61)return i(e);if((e=JSON.parse(JSON.stringify(e)))&&"object"==typeof e.audio){let t=function(e,t,n){t in e&&!(n in e)&&(e[n]=e[t],delete e[t])};t((e=JSON.parse(JSON.stringify(e))).audio,"autoGainControl","googAutoGainControl"),t(e.audio,"noiseSuppression","googNoiseSuppression"),e.audio=r(e.audio)}if(e&&"object"==typeof e.video){let s=e.video.facingMode;s=s&&("object"==typeof s?s:{ideal:s});let o=t.version<66;if(s&&("user"===s.exact||"environment"===s.exact||"user"===s.ideal||"environment"===s.ideal)&&!(n.mediaDevices.getSupportedConstraints&&n.mediaDevices.getSupportedConstraints().facingMode&&!o)){let t;if(delete e.video.facingMode,"environment"===s.exact||"environment"===s.ideal?t=["back","rear"]:("user"===s.exact||"user"===s.ideal)&&(t=["front"]),t)return n.mediaDevices.enumerateDevices().then(n=>{let o=(n=n.filter(e=>"videoinput"===e.kind)).find(e=>t.some(t=>e.label.toLowerCase().includes(t)));return!o&&n.length&&t.includes("back")&&(o=n[n.length-1]),o&&(e.video.deviceId=s.exact?{exact:o.deviceId}:{ideal:o.deviceId}),e.video=r(e.video),f("chrome: "+JSON.stringify(e)),i(e)})}e.video=r(e.video)}return f("chrome: "+JSON.stringify(e)),i(e)},s=function(e){return t.version>=64?e:{name:({PermissionDeniedError:"NotAllowedError",PermissionDismissedError:"NotAllowedError",InvalidStateError:"NotAllowedError",DevicesNotFoundError:"NotFoundError",ConstraintNotSatisfiedError:"OverconstrainedError",TrackStartError:"NotReadableError",MediaDeviceFailedDueToShutdown:"NotAllowedError",MediaDeviceKillSwitchOn:"NotAllowedError",TabCaptureError:"AbortError",ScreenCaptureError:"AbortError",DeviceCaptureError:"AbortError"})[e.name]||e.name,message:e.message,constraint:e.constraint||e.constraintName,toString(){return this.name+(this.message&&": ")+this.message}}};if(n.getUserMedia=(function(e,t,r){i(e,e=>{n.webkitGetUserMedia(e,t,e=>{r&&r(s(e))})})}).bind(n),n.mediaDevices.getUserMedia){let e=n.mediaDevices.getUserMedia.bind(n.mediaDevices);n.mediaDevices.getUserMedia=function(t){return i(t,t=>e(t).then(e=>{if(t.audio&&!e.getAudioTracks().length||t.video&&!e.getVideoTracks().length)throw e.getTracks().forEach(e=>{e.stop()}),new DOMException("","NotFoundError");return e},e=>Promise.reject(s(e))))}}}"use strict";function v(e){e.MediaStream=e.MediaStream||e.webkitMediaStream}function b(e){if("object"!=typeof e||!e.RTCPeerConnection||"ontrack"in e.RTCPeerConnection.prototype)l(e,"track",e=>(e.transceiver||Object.defineProperty(e,"transceiver",{value:{receiver:e.receiver}}),e));else{Object.defineProperty(e.RTCPeerConnection.prototype,"ontrack",{get(){return this._ontrack},set(e){this._ontrack&&this.removeEventListener("track",this._ontrack),this.addEventListener("track",this._ontrack=e)},enumerable:!0,configurable:!0});let t=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){return this._ontrackpoly||(this._ontrackpoly=t=>{t.stream.addEventListener("addtrack",n=>{let r;r=e.RTCPeerConnection.prototype.getReceivers?this.getReceivers().find(e=>e.track&&e.track.id===n.track.id):{track:n.track};let i=new Event("track");i.track=n.track,i.receiver=r,i.transceiver={receiver:r},i.streams=[t.stream],this.dispatchEvent(i)}),t.stream.getTracks().forEach(n=>{let r;r=e.RTCPeerConnection.prototype.getReceivers?this.getReceivers().find(e=>e.track&&e.track.id===n.id):{track:n};let i=new Event("track");i.track=n,i.receiver=r,i.transceiver={receiver:r},i.streams=[t.stream],this.dispatchEvent(i)})},this.addEventListener("addstream",this._ontrackpoly)),t.apply(this,arguments)}}}function T(e){if("object"==typeof e&&e.RTCPeerConnection&&!("getSenders"in e.RTCPeerConnection.prototype)&&"createDTMFSender"in e.RTCPeerConnection.prototype){let t=function(e,t){return{track:t,get dtmf(){return void 0===this._dtmf&&("audio"===t.kind?this._dtmf=e.createDTMFSender(t):this._dtmf=null),this._dtmf},_pc:e}};if(!e.RTCPeerConnection.prototype.getSenders){e.RTCPeerConnection.prototype.getSenders=function(){return this._senders=this._senders||[],this._senders.slice()};let n=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addTrack=function(e,r){let i=n.apply(this,arguments);return i||(i=t(this,e),this._senders.push(i)),i};let r=e.RTCPeerConnection.prototype.removeTrack;e.RTCPeerConnection.prototype.removeTrack=function(e){r.apply(this,arguments);let t=this._senders.indexOf(e);-1!==t&&this._senders.splice(t,1)}}let n=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(e){this._senders=this._senders||[],n.apply(this,[e]),e.getTracks().forEach(e=>{this._senders.push(t(this,e))})};let r=e.RTCPeerConnection.prototype.removeStream;e.RTCPeerConnection.prototype.removeStream=function(e){this._senders=this._senders||[],r.apply(this,[e]),e.getTracks().forEach(e=>{let t=this._senders.find(t=>t.track===e);t&&this._senders.splice(this._senders.indexOf(t),1)})}}else if("object"==typeof e&&e.RTCPeerConnection&&"getSenders"in e.RTCPeerConnection.prototype&&"createDTMFSender"in e.RTCPeerConnection.prototype&&e.RTCRtpSender&&!("dtmf"in e.RTCRtpSender.prototype)){let t=e.RTCPeerConnection.prototype.getSenders;e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e},Object.defineProperty(e.RTCRtpSender.prototype,"dtmf",{get(){return void 0===this._dtmf&&("audio"===this.track.kind?this._dtmf=this._pc.createDTMFSender(this.track):this._dtmf=null),this._dtmf}})}}function S(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender&&e.RTCRtpReceiver))return;if(!("getStats"in e.RTCRtpSender.prototype)){let t=e.RTCPeerConnection.prototype.getSenders;t&&(e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e});let n=e.RTCPeerConnection.prototype.addTrack;n&&(e.RTCPeerConnection.prototype.addTrack=function(){let e=n.apply(this,arguments);return e._pc=this,e}),e.RTCRtpSender.prototype.getStats=function(){let e=this;return this._pc.getStats().then(t=>g(t,e.track,!0))}}if(!("getStats"in e.RTCRtpReceiver.prototype)){let t=e.RTCPeerConnection.prototype.getReceivers;t&&(e.RTCPeerConnection.prototype.getReceivers=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e}),l(e,"track",e=>(e.receiver._pc=e.srcElement,e)),e.RTCRtpReceiver.prototype.getStats=function(){let e=this;return this._pc.getStats().then(t=>g(t,e.track,!1))}}if(!("getStats"in e.RTCRtpSender.prototype&&"getStats"in e.RTCRtpReceiver.prototype))return;let t=e.RTCPeerConnection.prototype.getStats;e.RTCPeerConnection.prototype.getStats=function(){if(arguments.length>0&&arguments[0]instanceof e.MediaStreamTrack){let e,t,n,r=arguments[0];return(this.getSenders().forEach(t=>{t.track===r&&(e?n=!0:e=t)}),this.getReceivers().forEach(e=>(e.track===r&&(t?n=!0:t=e),e.track===r)),n||e&&t)?Promise.reject(new DOMException("There are more than one sender or receiver for the track.","InvalidAccessError")):e?e.getStats():t?t.getStats():Promise.reject(new DOMException("There is no sender or receiver for the track.","InvalidAccessError"))}return t.apply(this,arguments)}}function k(e){e.RTCPeerConnection.prototype.getLocalStreams=function(){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},Object.keys(this._shimmedLocalStreams).map(e=>this._shimmedLocalStreams[e][0])};let t=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addTrack=function(e,n){if(!n)return t.apply(this,arguments);this._shimmedLocalStreams=this._shimmedLocalStreams||{};let r=t.apply(this,arguments);return this._shimmedLocalStreams[n.id]?-1===this._shimmedLocalStreams[n.id].indexOf(r)&&this._shimmedLocalStreams[n.id].push(r):this._shimmedLocalStreams[n.id]=[n,r],r};let n=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(e){this._shimmedLocalStreams=this._shimmedLocalStreams||{},e.getTracks().forEach(e=>{if(this.getSenders().find(t=>t.track===e))throw new DOMException("Track already exists.","InvalidAccessError")});let t=this.getSenders();n.apply(this,arguments);let r=this.getSenders().filter(e=>-1===t.indexOf(e));this._shimmedLocalStreams[e.id]=[e].concat(r)};let r=e.RTCPeerConnection.prototype.removeStream;e.RTCPeerConnection.prototype.removeStream=function(e){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},delete this._shimmedLocalStreams[e.id],r.apply(this,arguments)};let i=e.RTCPeerConnection.prototype.removeTrack;e.RTCPeerConnection.prototype.removeTrack=function(e){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},e&&Object.keys(this._shimmedLocalStreams).forEach(t=>{let n=this._shimmedLocalStreams[t].indexOf(e);-1!==n&&this._shimmedLocalStreams[t].splice(n,1),1===this._shimmedLocalStreams[t].length&&delete this._shimmedLocalStreams[t]}),i.apply(this,arguments)}}function R(e,t){if(!e.RTCPeerConnection)return;if(e.RTCPeerConnection.prototype.addTrack&&t.version>=65)return k(e);let n=e.RTCPeerConnection.prototype.getLocalStreams;e.RTCPeerConnection.prototype.getLocalStreams=function(){let e=n.apply(this);return this._reverseStreams=this._reverseStreams||{},e.map(e=>this._reverseStreams[e.id])};let r=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(t){if(this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{},t.getTracks().forEach(e=>{if(this.getSenders().find(t=>t.track===e))throw new DOMException("Track already exists.","InvalidAccessError")}),!this._reverseStreams[t.id]){let n=new e.MediaStream(t.getTracks());this._streams[t.id]=n,this._reverseStreams[n.id]=t,t=n}r.apply(this,[t])};let i=e.RTCPeerConnection.prototype.removeStream;function s(e,t){let n=t.sdp;return Object.keys(e._reverseStreams||[]).forEach(t=>{let r=e._reverseStreams[t],i=e._streams[r.id];n=n.replace(RegExp(i.id,"g"),r.id)}),new RTCSessionDescription({type:t.type,sdp:n})}e.RTCPeerConnection.prototype.removeStream=function(e){this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{},i.apply(this,[this._streams[e.id]||e]),delete this._reverseStreams[this._streams[e.id]?this._streams[e.id].id:e.id],delete this._streams[e.id]},e.RTCPeerConnection.prototype.addTrack=function(t,n){if("closed"===this.signalingState)throw new DOMException("The RTCPeerConnection's signalingState is 'closed'.","InvalidStateError");let r=[].slice.call(arguments,1);if(1!==r.length||!r[0].getTracks().find(e=>e===t))throw new DOMException("The adapter.js addTrack polyfill only supports a single  stream which is associated with the specified track.","NotSupportedError");if(this.getSenders().find(e=>e.track===t))throw new DOMException("Track already exists.","InvalidAccessError");this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{};let i=this._streams[n.id];if(i)i.addTrack(t),Promise.resolve().then(()=>{this.dispatchEvent(new Event("negotiationneeded"))});else{let r=new e.MediaStream([t]);this._streams[n.id]=r,this._reverseStreams[r.id]=n,this.addStream(r)}return this.getSenders().find(e=>e.track===t)},["createOffer","createAnswer"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){let e=arguments,t=arguments.length&&"function"==typeof arguments[0];return t?n.apply(this,[t=>{let n=s(this,t);e[0].apply(null,[n])},t=>{e[1]&&e[1].apply(null,t)},arguments[2]]):n.apply(this,arguments).then(e=>s(this,e))}})[t]});let o=e.RTCPeerConnection.prototype.setLocalDescription;e.RTCPeerConnection.prototype.setLocalDescription=function(){var e,t;let n;return arguments.length&&arguments[0].type?(arguments[0]=(e=this,t=arguments[0],n=t.sdp,Object.keys(e._reverseStreams||[]).forEach(t=>{let r=e._reverseStreams[t],i=e._streams[r.id];n=n.replace(RegExp(r.id,"g"),i.id)}),new RTCSessionDescription({type:t.type,sdp:n})),o.apply(this,arguments)):o.apply(this,arguments)};let a=Object.getOwnPropertyDescriptor(e.RTCPeerConnection.prototype,"localDescription");Object.defineProperty(e.RTCPeerConnection.prototype,"localDescription",{get(){let e=a.get.apply(this);return""===e.type?e:s(this,e)}}),e.RTCPeerConnection.prototype.removeTrack=function(e){let t;if("closed"===this.signalingState)throw new DOMException("The RTCPeerConnection's signalingState is 'closed'.","InvalidStateError");if(!e._pc)throw new DOMException("Argument 1 of RTCPeerConnection.removeTrack does not implement interface RTCRtpSender.","TypeError");if(e._pc!==this)throw new DOMException("Sender was not created by this connection.","InvalidAccessError");this._streams=this._streams||{},Object.keys(this._streams).forEach(n=>{this._streams[n].getTracks().find(t=>e.track===t)&&(t=this._streams[n])}),t&&(1===t.getTracks().length?this.removeStream(this._reverseStreams[t.id]):t.removeTrack(e.track),this.dispatchEvent(new Event("negotiationneeded")))}}function P(e,t){!e.RTCPeerConnection&&e.webkitRTCPeerConnection&&(e.RTCPeerConnection=e.webkitRTCPeerConnection),e.RTCPeerConnection&&t.version<53&&["setLocalDescription","setRemoteDescription","addIceCandidate"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){return arguments[0]=new("addIceCandidate"===t?e.RTCIceCandidate:e.RTCSessionDescription)(arguments[0]),n.apply(this,arguments)}})[t]})}function w(e,t){l(e,"negotiationneeded",e=>{let n=e.target;if(!(t.version<72)&&(!n.getConfiguration||"plan-b"!==n.getConfiguration().sdpSemantics)||"stable"===n.signalingState)return e})}"use strict";e(y,"shimMediaStream",()=>v),e(y,"shimOnTrack",()=>b),e(y,"shimGetSendersWithDtmf",()=>T),e(y,"shimSenderReceiverGetStats",()=>S),e(y,"shimAddTrackRemoveTrackWithNative",()=>k),e(y,"shimAddTrackRemoveTrack",()=>R),e(y,"shimPeerConnection",()=>P),e(y,"fixNegotiationNeeded",()=>w),e(y,"shimGetUserMedia",()=>C);var E={};function x(e,t){let n=e&&e.navigator,r=e&&e.MediaStreamTrack;if(n.getUserMedia=function(e,t,r){m("navigator.getUserMedia","navigator.mediaDevices.getUserMedia"),n.mediaDevices.getUserMedia(e).then(t,r)},!(t.version>55&&"autoGainControl"in n.mediaDevices.getSupportedConstraints())){let e=function(e,t,n){t in e&&!(n in e)&&(e[n]=e[t],delete e[t])},t=n.mediaDevices.getUserMedia.bind(n.mediaDevices);if(n.mediaDevices.getUserMedia=function(n){return"object"==typeof n&&"object"==typeof n.audio&&(e((n=JSON.parse(JSON.stringify(n))).audio,"autoGainControl","mozAutoGainControl"),e(n.audio,"noiseSuppression","mozNoiseSuppression")),t(n)},r&&r.prototype.getSettings){let t=r.prototype.getSettings;r.prototype.getSettings=function(){let n=t.apply(this,arguments);return e(n,"mozAutoGainControl","autoGainControl"),e(n,"mozNoiseSuppression","noiseSuppression"),n}}if(r&&r.prototype.applyConstraints){let t=r.prototype.applyConstraints;r.prototype.applyConstraints=function(n){return"audio"===this.kind&&"object"==typeof n&&(e(n=JSON.parse(JSON.stringify(n)),"autoGainControl","mozAutoGainControl"),e(n,"noiseSuppression","mozNoiseSuppression")),t.apply(this,[n])}}}}"use strict";function D(e,t){e.navigator.mediaDevices&&"getDisplayMedia"in e.navigator.mediaDevices||e.navigator.mediaDevices&&(e.navigator.mediaDevices.getDisplayMedia=function(n){if(!(n&&n.video)){let e=new DOMException("getDisplayMedia without video constraints is undefined");return e.name="NotFoundError",e.code=8,Promise.reject(e)}return!0===n.video?n.video={mediaSource:t}:n.video.mediaSource=t,e.navigator.mediaDevices.getUserMedia(n)})}"use strict";function I(e){"object"==typeof e&&e.RTCTrackEvent&&"receiver"in e.RTCTrackEvent.prototype&&!("transceiver"in e.RTCTrackEvent.prototype)&&Object.defineProperty(e.RTCTrackEvent.prototype,"transceiver",{get(){return{receiver:this.receiver}}})}function M(e,t){if("object"!=typeof e||!(e.RTCPeerConnection||e.mozRTCPeerConnection))return;!e.RTCPeerConnection&&e.mozRTCPeerConnection&&(e.RTCPeerConnection=e.mozRTCPeerConnection),t.version<53&&["setLocalDescription","setRemoteDescription","addIceCandidate"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){return arguments[0]=new("addIceCandidate"===t?e.RTCIceCandidate:e.RTCSessionDescription)(arguments[0]),n.apply(this,arguments)}})[t]});let n={inboundrtp:"inbound-rtp",outboundrtp:"outbound-rtp",candidatepair:"candidate-pair",localcandidate:"local-candidate",remotecandidate:"remote-candidate"},r=e.RTCPeerConnection.prototype.getStats;e.RTCPeerConnection.prototype.getStats=function(){let[e,i,s]=arguments;return r.apply(this,[e||null]).then(e=>{if(t.version<53&&!i)try{e.forEach(e=>{e.type=n[e.type]||e.type})}catch(t){if("TypeError"!==t.name)throw t;e.forEach((t,r)=>{e.set(r,Object.assign({},t,{type:n[t.type]||t.type}))})}return e}).then(i,s)}}function O(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender)||e.RTCRtpSender&&"getStats"in e.RTCRtpSender.prototype)return;let t=e.RTCPeerConnection.prototype.getSenders;t&&(e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e});let n=e.RTCPeerConnection.prototype.addTrack;n&&(e.RTCPeerConnection.prototype.addTrack=function(){let e=n.apply(this,arguments);return e._pc=this,e}),e.RTCRtpSender.prototype.getStats=function(){return this.track?this._pc.getStats(this.track):Promise.resolve(new Map)}}function L(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender)||e.RTCRtpSender&&"getStats"in e.RTCRtpReceiver.prototype)return;let t=e.RTCPeerConnection.prototype.getReceivers;t&&(e.RTCPeerConnection.prototype.getReceivers=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e}),l(e,"track",e=>(e.receiver._pc=e.srcElement,e)),e.RTCRtpReceiver.prototype.getStats=function(){return this._pc.getStats(this.track)}}function A(e){!e.RTCPeerConnection||"removeStream"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.removeStream=function(e){m("removeStream","removeTrack"),this.getSenders().forEach(t=>{t.track&&e.getTracks().includes(t.track)&&this.removeTrack(t)})})}function j(e){e.DataChannel&&!e.RTCDataChannel&&(e.RTCDataChannel=e.DataChannel)}function B(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.addTransceiver;t&&(e.RTCPeerConnection.prototype.addTransceiver=function(){this.setParametersPromises=[];let e=arguments[1]&&arguments[1].sendEncodings;void 0===e&&(e=[]);let n=(e=[...e]).length>0;n&&e.forEach(e=>{if("rid"in e&&!/^[a-z0-9]{0,16}$/i.test(e.rid))throw TypeError("Invalid RID value provided.");if("scaleResolutionDownBy"in e&&!(parseFloat(e.scaleResolutionDownBy)>=1))throw RangeError("scale_resolution_down_by must be >= 1.0");if("maxFramerate"in e&&!(parseFloat(e.maxFramerate)>=0))throw RangeError("max_framerate must be >= 0.0")});let r=t.apply(this,arguments);if(n){let{sender:t}=r,n=t.getParameters();"encodings"in n&&(1!==n.encodings.length||0!==Object.keys(n.encodings[0]).length)||(n.encodings=e,t.sendEncodings=e,this.setParametersPromises.push(t.setParameters(n).then(()=>{delete t.sendEncodings}).catch(()=>{delete t.sendEncodings})))}return r})}function U(e){if(!("object"==typeof e&&e.RTCRtpSender))return;let t=e.RTCRtpSender.prototype.getParameters;t&&(e.RTCRtpSender.prototype.getParameters=function(){let e=t.apply(this,arguments);return"encodings"in e||(e.encodings=[].concat(this.sendEncodings||[{}])),e})}function F(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.createOffer;e.RTCPeerConnection.prototype.createOffer=function(){return this.setParametersPromises&&this.setParametersPromises.length?Promise.all(this.setParametersPromises).then(()=>t.apply(this,arguments)).finally(()=>{this.setParametersPromises=[]}):t.apply(this,arguments)}}function N(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.createAnswer;e.RTCPeerConnection.prototype.createAnswer=function(){return this.setParametersPromises&&this.setParametersPromises.length?Promise.all(this.setParametersPromises).then(()=>t.apply(this,arguments)).finally(()=>{this.setParametersPromises=[]}):t.apply(this,arguments)}}"use strict";e(E,"shimOnTrack",()=>I),e(E,"shimPeerConnection",()=>M),e(E,"shimSenderGetStats",()=>O),e(E,"shimReceiverGetStats",()=>L),e(E,"shimRemoveStream",()=>A),e(E,"shimRTCDataChannel",()=>j),e(E,"shimAddTransceiver",()=>B),e(E,"shimGetParameters",()=>U),e(E,"shimCreateOffer",()=>F),e(E,"shimCreateAnswer",()=>N),e(E,"shimGetUserMedia",()=>x),e(E,"shimGetDisplayMedia",()=>D);var z={};function $(e){if("object"==typeof e&&e.RTCPeerConnection){if("getLocalStreams"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.getLocalStreams=function(){return this._localStreams||(this._localStreams=[]),this._localStreams}),!("addStream"in e.RTCPeerConnection.prototype)){let t=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addStream=function(e){this._localStreams||(this._localStreams=[]),this._localStreams.includes(e)||this._localStreams.push(e),e.getAudioTracks().forEach(n=>t.call(this,n,e)),e.getVideoTracks().forEach(n=>t.call(this,n,e))},e.RTCPeerConnection.prototype.addTrack=function(e,...n){return n&&n.forEach(e=>{this._localStreams?this._localStreams.includes(e)||this._localStreams.push(e):this._localStreams=[e]}),t.apply(this,arguments)}}"removeStream"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.removeStream=function(e){this._localStreams||(this._localStreams=[]);let t=this._localStreams.indexOf(e);if(-1===t)return;this._localStreams.splice(t,1);let n=e.getTracks();this.getSenders().forEach(e=>{n.includes(e.track)&&this.removeTrack(e)})})}}function V(e){if("object"==typeof e&&e.RTCPeerConnection&&("getRemoteStreams"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.getRemoteStreams=function(){return this._remoteStreams?this._remoteStreams:[]}),!("onaddstream"in e.RTCPeerConnection.prototype))){Object.defineProperty(e.RTCPeerConnection.prototype,"onaddstream",{get(){return this._onaddstream},set(e){this._onaddstream&&(this.removeEventListener("addstream",this._onaddstream),this.removeEventListener("track",this._onaddstreampoly)),this.addEventListener("addstream",this._onaddstream=e),this.addEventListener("track",this._onaddstreampoly=e=>{e.streams.forEach(e=>{if(this._remoteStreams||(this._remoteStreams=[]),this._remoteStreams.includes(e))return;this._remoteStreams.push(e);let t=new Event("addstream");t.stream=e,this.dispatchEvent(t)})})}});let t=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){let e=this;return this._onaddstreampoly||this.addEventListener("track",this._onaddstreampoly=function(t){t.streams.forEach(t=>{if(e._remoteStreams||(e._remoteStreams=[]),e._remoteStreams.indexOf(t)>=0)return;e._remoteStreams.push(t);let n=new Event("addstream");n.stream=t,e.dispatchEvent(n)})}),t.apply(e,arguments)}}}function G(e){if("object"!=typeof e||!e.RTCPeerConnection)return;let t=e.RTCPeerConnection.prototype,n=t.createOffer,r=t.createAnswer,i=t.setLocalDescription,s=t.setRemoteDescription,o=t.addIceCandidate;t.createOffer=function(e,t){let r=arguments.length>=2?arguments[2]:arguments[0],i=n.apply(this,[r]);return t?(i.then(e,t),Promise.resolve()):i},t.createAnswer=function(e,t){let n=arguments.length>=2?arguments[2]:arguments[0],i=r.apply(this,[n]);return t?(i.then(e,t),Promise.resolve()):i};let a=function(e,t,n){let r=i.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r};t.setLocalDescription=a,t.setRemoteDescription=a=function(e,t,n){let r=s.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r},t.addIceCandidate=function(e,t,n){let r=o.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r}}function J(e){let t=e&&e.navigator;if(t.mediaDevices&&t.mediaDevices.getUserMedia){let e=t.mediaDevices,n=e.getUserMedia.bind(e);t.mediaDevices.getUserMedia=e=>n(W(e))}!t.getUserMedia&&t.mediaDevices&&t.mediaDevices.getUserMedia&&(t.getUserMedia=(function(e,n,r){t.mediaDevices.getUserMedia(e).then(n,r)}).bind(t))}function W(e){return e&&void 0!==e.video?Object.assign({},e,{video:function e(t){return _(t)?Object.keys(t).reduce(function(n,r){let i=_(t[r]),s=i?e(t[r]):t[r],o=i&&!Object.keys(s).length;return void 0===s||o?n:Object.assign(n,{[r]:s})},{}):t}(e.video)}):e}function Y(e){if(!e.RTCPeerConnection)return;let t=e.RTCPeerConnection;e.RTCPeerConnection=function(e,n){if(e&&e.iceServers){let t=[];for(let n=0;n<e.iceServers.length;n++){let r=e.iceServers[n];void 0===r.urls&&r.url?(m("RTCIceServer.url","RTCIceServer.urls"),(r=JSON.parse(JSON.stringify(r))).urls=r.url,delete r.url,t.push(r)):t.push(e.iceServers[n])}e.iceServers=t}return new t(e,n)},e.RTCPeerConnection.prototype=t.prototype,"generateCertificate"in t&&Object.defineProperty(e.RTCPeerConnection,"generateCertificate",{get:()=>t.generateCertificate})}function H(e){"object"==typeof e&&e.RTCTrackEvent&&"receiver"in e.RTCTrackEvent.prototype&&!("transceiver"in e.RTCTrackEvent.prototype)&&Object.defineProperty(e.RTCTrackEvent.prototype,"transceiver",{get(){return{receiver:this.receiver}}})}function K(e){let t=e.RTCPeerConnection.prototype.createOffer;e.RTCPeerConnection.prototype.createOffer=function(e){if(e){void 0!==e.offerToReceiveAudio&&(e.offerToReceiveAudio=!!e.offerToReceiveAudio);let t=this.getTransceivers().find(e=>"audio"===e.receiver.track.kind);!1===e.offerToReceiveAudio&&t?"sendrecv"===t.direction?t.setDirection?t.setDirection("sendonly"):t.direction="sendonly":"recvonly"===t.direction&&(t.setDirection?t.setDirection("inactive"):t.direction="inactive"):!0!==e.offerToReceiveAudio||t||this.addTransceiver("audio",{direction:"recvonly"}),void 0!==e.offerToReceiveVideo&&(e.offerToReceiveVideo=!!e.offerToReceiveVideo);let n=this.getTransceivers().find(e=>"video"===e.receiver.track.kind);!1===e.offerToReceiveVideo&&n?"sendrecv"===n.direction?n.setDirection?n.setDirection("sendonly"):n.direction="sendonly":"recvonly"===n.direction&&(n.setDirection?n.setDirection("inactive"):n.direction="inactive"):!0!==e.offerToReceiveVideo||n||this.addTransceiver("video",{direction:"recvonly"})}return t.apply(this,arguments)}}function X(e){"object"!=typeof e||e.AudioContext||(e.AudioContext=e.webkitAudioContext)}e(z,"shimLocalStreamsAPI",()=>$),e(z,"shimRemoteStreamsAPI",()=>V),e(z,"shimCallbacksAPI",()=>G),e(z,"shimGetUserMedia",()=>J),e(z,"shimConstraints",()=>W),e(z,"shimRTCIceServerUrls",()=>Y),e(z,"shimTrackEventTransceiver",()=>H),e(z,"shimCreateOfferLegacy",()=>K),e(z,"shimAudioContext",()=>X);var Q={};"use strict";e(Q,"shimRTCIceCandidate",()=>ee),e(Q,"shimRTCIceCandidateRelayProtocol",()=>et),e(Q,"shimMaxMessageSize",()=>en),e(Q,"shimSendThrowTypeError",()=>er),e(Q,"shimConnectionState",()=>ei),e(Q,"removeExtmapAllowMixed",()=>es),e(Q,"shimAddIceCandidateNullOrEmpty",()=>eo),e(Q,"shimParameterlessSetLocalDescription",()=>ea);var q={};"use strict";let Z={};function ee(e){if(!e.RTCIceCandidate||e.RTCIceCandidate&&"foundation"in e.RTCIceCandidate.prototype)return;let n=e.RTCIceCandidate;e.RTCIceCandidate=function(e){if("object"==typeof e&&e.candidate&&0===e.candidate.indexOf("a=")&&((e=JSON.parse(JSON.stringify(e))).candidate=e.candidate.substring(2)),e.candidate&&e.candidate.length){let r=new n(e),i=t(q).parseCandidate(e.candidate);for(let e in i)e in r||Object.defineProperty(r,e,{value:i[e]});return r.toJSON=function(){return{candidate:r.candidate,sdpMid:r.sdpMid,sdpMLineIndex:r.sdpMLineIndex,usernameFragment:r.usernameFragment}},r}return new n(e)},e.RTCIceCandidate.prototype=n.prototype,l(e,"icecandidate",t=>(t.candidate&&Object.defineProperty(t,"candidate",{value:new e.RTCIceCandidate(t.candidate),writable:"false"}),t))}function et(e){!e.RTCIceCandidate||e.RTCIceCandidate&&"relayProtocol"in e.RTCIceCandidate.prototype||l(e,"icecandidate",e=>{if(e.candidate){let n=t(q).parseCandidate(e.candidate.candidate);"relay"===n.type&&(e.candidate.relayProtocol=({0:"tls",1:"tcp",2:"udp"})[n.priority>>24])}return e})}function en(e,n){if(!e.RTCPeerConnection)return;"sctp"in e.RTCPeerConnection.prototype||Object.defineProperty(e.RTCPeerConnection.prototype,"sctp",{get(){return void 0===this._sctp?null:this._sctp}});let r=function(e){if(!e||!e.sdp)return!1;let n=t(q).splitSections(e.sdp);return n.shift(),n.some(e=>{let n=t(q).parseMLine(e);return n&&"application"===n.kind&&-1!==n.protocol.indexOf("SCTP")})},i=function(e){let t=e.sdp.match(/mozilla...THIS_IS_SDPARTA-(\d+)/);if(null===t||t.length<2)return -1;let n=parseInt(t[1],10);return n!=n?-1:n},s=function(e){let t=65536;return"firefox"===n.browser&&(t=n.version<57?-1===e?16384:0x7ffffff5:n.version<60?57===n.version?65535:65536:0x7ffffff5),t},o=function(e,r){let i=65536;"firefox"===n.browser&&57===n.version&&(i=65535);let s=t(q).matchPrefix(e.sdp,"a=max-message-size:");return s.length>0?i=parseInt(s[0].substring(19),10):"firefox"===n.browser&&-1!==r&&(i=0x7ffffff5),i},a=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){if(this._sctp=null,"chrome"===n.browser&&n.version>=76){let{sdpSemantics:e}=this.getConfiguration();"plan-b"===e&&Object.defineProperty(this,"sctp",{get(){return void 0===this._sctp?null:this._sctp},enumerable:!0,configurable:!0})}if(r(arguments[0])){let e,t=i(arguments[0]),n=s(t),r=o(arguments[0],t);e=0===n&&0===r?Number.POSITIVE_INFINITY:0===n||0===r?Math.max(n,r):Math.min(n,r);let a={};Object.defineProperty(a,"maxMessageSize",{get:()=>e}),this._sctp=a}return a.apply(this,arguments)}}function er(e){if(!(e.RTCPeerConnection&&"createDataChannel"in e.RTCPeerConnection.prototype))return;function t(e,t){let n=e.send;e.send=function(){let r=arguments[0],i=r.length||r.size||r.byteLength;if("open"===e.readyState&&t.sctp&&i>t.sctp.maxMessageSize)throw TypeError("Message too large (can send a maximum of "+t.sctp.maxMessageSize+" bytes)");return n.apply(e,arguments)}}let n=e.RTCPeerConnection.prototype.createDataChannel;e.RTCPeerConnection.prototype.createDataChannel=function(){let e=n.apply(this,arguments);return t(e,this),e},l(e,"datachannel",e=>(t(e.channel,e.target),e))}function ei(e){if(!e.RTCPeerConnection||"connectionState"in e.RTCPeerConnection.prototype)return;let t=e.RTCPeerConnection.prototype;Object.defineProperty(t,"connectionState",{get(){return({completed:"connected",checking:"connecting"})[this.iceConnectionState]||this.iceConnectionState},enumerable:!0,configurable:!0}),Object.defineProperty(t,"onconnectionstatechange",{get(){return this._onconnectionstatechange||null},set(e){this._onconnectionstatechange&&(this.removeEventListener("connectionstatechange",this._onconnectionstatechange),delete this._onconnectionstatechange),e&&this.addEventListener("connectionstatechange",this._onconnectionstatechange=e)},enumerable:!0,configurable:!0}),["setLocalDescription","setRemoteDescription"].forEach(e=>{let n=t[e];t[e]=function(){return this._connectionstatechangepoly||(this._connectionstatechangepoly=e=>{let t=e.target;if(t._lastConnectionState!==t.connectionState){t._lastConnectionState=t.connectionState;let n=new Event("connectionstatechange",e);t.dispatchEvent(n)}return e},this.addEventListener("iceconnectionstatechange",this._connectionstatechangepoly)),n.apply(this,arguments)}})}function es(e,t){if(!e.RTCPeerConnection||"chrome"===t.browser&&t.version>=71||"safari"===t.browser&&t.version>=605)return;let n=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(t){if(t&&t.sdp&&-1!==t.sdp.indexOf("\na=extmap-allow-mixed")){let n=t.sdp.split("\n").filter(e=>"a=extmap-allow-mixed"!==e.trim()).join("\n");e.RTCSessionDescription&&t instanceof e.RTCSessionDescription?arguments[0]=new e.RTCSessionDescription({type:t.type,sdp:n}):t.sdp=n}return n.apply(this,arguments)}}function eo(e,t){if(!(e.RTCPeerConnection&&e.RTCPeerConnection.prototype))return;let n=e.RTCPeerConnection.prototype.addIceCandidate;n&&0!==n.length&&(e.RTCPeerConnection.prototype.addIceCandidate=function(){return arguments[0]?("chrome"===t.browser&&t.version<78||"firefox"===t.browser&&t.version<68||"safari"===t.browser)&&arguments[0]&&""===arguments[0].candidate?Promise.resolve():n.apply(this,arguments):(arguments[1]&&arguments[1].apply(null),Promise.resolve())})}function ea(e,t){if(!(e.RTCPeerConnection&&e.RTCPeerConnection.prototype))return;let n=e.RTCPeerConnection.prototype.setLocalDescription;n&&0!==n.length&&(e.RTCPeerConnection.prototype.setLocalDescription=function(){let e=arguments[0]||{};if("object"!=typeof e||e.type&&e.sdp)return n.apply(this,arguments);if(!(e={type:e.type,sdp:e.sdp}).type)switch(this.signalingState){case"stable":case"have-local-offer":case"have-remote-pranswer":e.type="offer";break;default:e.type="answer"}return e.sdp||"offer"!==e.type&&"answer"!==e.type?n.apply(this,[e]):("offer"===e.type?this.createOffer:this.createAnswer).apply(this).then(e=>n.apply(this,[e]))})}"use strict";Z.generateIdentifier=function(){return Math.random().toString(36).substring(2,12)},Z.localCName=Z.generateIdentifier(),Z.splitLines=function(e){return e.trim().split("\n").map(e=>e.trim())},Z.splitSections=function(e){return e.split("\nm=").map((e,t)=>(t>0?"m="+e:e).trim()+"\r\n")},Z.getDescription=function(e){let t=Z.splitSections(e);return t&&t[0]},Z.getMediaSections=function(e){let t=Z.splitSections(e);return t.shift(),t},Z.matchPrefix=function(e,t){return Z.splitLines(e).filter(e=>0===e.indexOf(t))},Z.parseCandidate=function(e){let t,n={foundation:(t=0===e.indexOf("a=candidate:")?e.substring(12).split(" "):e.substring(10).split(" "))[0],component:{1:"rtp",2:"rtcp"}[t[1]]||t[1],protocol:t[2].toLowerCase(),priority:parseInt(t[3],10),ip:t[4],address:t[4],port:parseInt(t[5],10),type:t[7]};for(let e=8;e<t.length;e+=2)switch(t[e]){case"raddr":n.relatedAddress=t[e+1];break;case"rport":n.relatedPort=parseInt(t[e+1],10);break;case"tcptype":n.tcpType=t[e+1];break;case"ufrag":n.ufrag=t[e+1],n.usernameFragment=t[e+1];break;default:void 0===n[t[e]]&&(n[t[e]]=t[e+1])}return n},Z.writeCandidate=function(e){let t=[];t.push(e.foundation);let n=e.component;"rtp"===n?t.push(1):"rtcp"===n?t.push(2):t.push(n),t.push(e.protocol.toUpperCase()),t.push(e.priority),t.push(e.address||e.ip),t.push(e.port);let r=e.type;return t.push("typ"),t.push(r),"host"!==r&&e.relatedAddress&&e.relatedPort&&(t.push("raddr"),t.push(e.relatedAddress),t.push("rport"),t.push(e.relatedPort)),e.tcpType&&"tcp"===e.protocol.toLowerCase()&&(t.push("tcptype"),t.push(e.tcpType)),(e.usernameFragment||e.ufrag)&&(t.push("ufrag"),t.push(e.usernameFragment||e.ufrag)),"candidate:"+t.join(" ")},Z.parseIceOptions=function(e){return e.substring(14).split(" ")},Z.parseRtpMap=function(e){let t=e.substring(9).split(" "),n={payloadType:parseInt(t.shift(),10)};return n.name=(t=t[0].split("/"))[0],n.clockRate=parseInt(t[1],10),n.channels=3===t.length?parseInt(t[2],10):1,n.numChannels=n.channels,n},Z.writeRtpMap=function(e){let t=e.payloadType;void 0!==e.preferredPayloadType&&(t=e.preferredPayloadType);let n=e.channels||e.numChannels||1;return"a=rtpmap:"+t+" "+e.name+"/"+e.clockRate+(1!==n?"/"+n:"")+"\r\n"},Z.parseExtmap=function(e){let t=e.substring(9).split(" ");return{id:parseInt(t[0],10),direction:t[0].indexOf("/")>0?t[0].split("/")[1]:"sendrecv",uri:t[1],attributes:t.slice(2).join(" ")}},Z.writeExtmap=function(e){return"a=extmap:"+(e.id||e.preferredId)+(e.direction&&"sendrecv"!==e.direction?"/"+e.direction:"")+" "+e.uri+(e.attributes?" "+e.attributes:"")+"\r\n"},Z.parseFmtp=function(e){let t,n={},r=e.substring(e.indexOf(" ")+1).split(";");for(let e=0;e<r.length;e++)n[(t=r[e].trim().split("="))[0].trim()]=t[1];return n},Z.writeFmtp=function(e){let t="",n=e.payloadType;if(void 0!==e.preferredPayloadType&&(n=e.preferredPayloadType),e.parameters&&Object.keys(e.parameters).length){let r=[];Object.keys(e.parameters).forEach(t=>{void 0!==e.parameters[t]?r.push(t+"="+e.parameters[t]):r.push(t)}),t+="a=fmtp:"+n+" "+r.join(";")+"\r\n"}return t},Z.parseRtcpFb=function(e){let t=e.substring(e.indexOf(" ")+1).split(" ");return{type:t.shift(),parameter:t.join(" ")}},Z.writeRtcpFb=function(e){let t="",n=e.payloadType;return void 0!==e.preferredPayloadType&&(n=e.preferredPayloadType),e.rtcpFeedback&&e.rtcpFeedback.length&&e.rtcpFeedback.forEach(e=>{t+="a=rtcp-fb:"+n+" "+e.type+(e.parameter&&e.parameter.length?" "+e.parameter:"")+"\r\n"}),t},Z.parseSsrcMedia=function(e){let t=e.indexOf(" "),n={ssrc:parseInt(e.substring(7,t),10)},r=e.indexOf(":",t);return r>-1?(n.attribute=e.substring(t+1,r),n.value=e.substring(r+1)):n.attribute=e.substring(t+1),n},Z.parseSsrcGroup=function(e){let t=e.substring(13).split(" ");return{semantics:t.shift(),ssrcs:t.map(e=>parseInt(e,10))}},Z.getMid=function(e){let t=Z.matchPrefix(e,"a=mid:")[0];if(t)return t.substring(6)},Z.parseFingerprint=function(e){let t=e.substring(14).split(" ");return{algorithm:t[0].toLowerCase(),value:t[1].toUpperCase()}},Z.getDtlsParameters=function(e,t){return{role:"auto",fingerprints:Z.matchPrefix(e+t,"a=fingerprint:").map(Z.parseFingerprint)}},Z.writeDtlsParameters=function(e,t){let n="a=setup:"+t+"\r\n";return e.fingerprints.forEach(e=>{n+="a=fingerprint:"+e.algorithm+" "+e.value+"\r\n"}),n},Z.parseCryptoLine=function(e){let t=e.substring(9).split(" ");return{tag:parseInt(t[0],10),cryptoSuite:t[1],keyParams:t[2],sessionParams:t.slice(3)}},Z.writeCryptoLine=function(e){return"a=crypto:"+e.tag+" "+e.cryptoSuite+" "+("object"==typeof e.keyParams?Z.writeCryptoKeyParams(e.keyParams):e.keyParams)+(e.sessionParams?" "+e.sessionParams.join(" "):"")+"\r\n"},Z.parseCryptoKeyParams=function(e){if(0!==e.indexOf("inline:"))return null;let t=e.substring(7).split("|");return{keyMethod:"inline",keySalt:t[0],lifeTime:t[1],mkiValue:t[2]?t[2].split(":")[0]:void 0,mkiLength:t[2]?t[2].split(":")[1]:void 0}},Z.writeCryptoKeyParams=function(e){return e.keyMethod+":"+e.keySalt+(e.lifeTime?"|"+e.lifeTime:"")+(e.mkiValue&&e.mkiLength?"|"+e.mkiValue+":"+e.mkiLength:"")},Z.getCryptoParameters=function(e,t){return Z.matchPrefix(e+t,"a=crypto:").map(Z.parseCryptoLine)},Z.getIceParameters=function(e,t){let n=Z.matchPrefix(e+t,"a=ice-ufrag:")[0],r=Z.matchPrefix(e+t,"a=ice-pwd:")[0];return n&&r?{usernameFragment:n.substring(12),password:r.substring(10)}:null},Z.writeIceParameters=function(e){let t="a=ice-ufrag:"+e.usernameFragment+"\r\na=ice-pwd:"+e.password+"\r\n";return e.iceLite&&(t+="a=ice-lite\r\n"),t},Z.parseRtpParameters=function(e){let t={codecs:[],headerExtensions:[],fecMechanisms:[],rtcp:[]},n=Z.splitLines(e)[0].split(" ");t.profile=n[2];for(let r=3;r<n.length;r++){let i=n[r],s=Z.matchPrefix(e,"a=rtpmap:"+i+" ")[0];if(s){let n=Z.parseRtpMap(s),r=Z.matchPrefix(e,"a=fmtp:"+i+" ");switch(n.parameters=r.length?Z.parseFmtp(r[0]):{},n.rtcpFeedback=Z.matchPrefix(e,"a=rtcp-fb:"+i+" ").map(Z.parseRtcpFb),t.codecs.push(n),n.name.toUpperCase()){case"RED":case"ULPFEC":t.fecMechanisms.push(n.name.toUpperCase())}}}Z.matchPrefix(e,"a=extmap:").forEach(e=>{t.headerExtensions.push(Z.parseExtmap(e))});let r=Z.matchPrefix(e,"a=rtcp-fb:* ").map(Z.parseRtcpFb);return t.codecs.forEach(e=>{r.forEach(t=>{e.rtcpFeedback.find(e=>e.type===t.type&&e.parameter===t.parameter)||e.rtcpFeedback.push(t)})}),t},Z.writeRtpDescription=function(e,t){let n="";n+="m="+e+" ",n+=t.codecs.length>0?"9":"0",n+=" "+(t.profile||"UDP/TLS/RTP/SAVPF")+" ",n+=t.codecs.map(e=>void 0!==e.preferredPayloadType?e.preferredPayloadType:e.payloadType).join(" ")+"\r\n",n+="c=IN IP4 0.0.0.0\r\n",n+="a=rtcp:9 IN IP4 0.0.0.0\r\n",t.codecs.forEach(e=>{n+=Z.writeRtpMap(e),n+=Z.writeFmtp(e),n+=Z.writeRtcpFb(e)});let r=0;return t.codecs.forEach(e=>{e.maxptime>r&&(r=e.maxptime)}),r>0&&(n+="a=maxptime:"+r+"\r\n"),t.headerExtensions&&t.headerExtensions.forEach(e=>{n+=Z.writeExtmap(e)}),n},Z.parseRtpEncodingParameters=function(e){let t,n=[],r=Z.parseRtpParameters(e),i=-1!==r.fecMechanisms.indexOf("RED"),s=-1!==r.fecMechanisms.indexOf("ULPFEC"),o=Z.matchPrefix(e,"a=ssrc:").map(e=>Z.parseSsrcMedia(e)).filter(e=>"cname"===e.attribute),a=o.length>0&&o[0].ssrc,c=Z.matchPrefix(e,"a=ssrc-group:FID").map(e=>e.substring(17).split(" ").map(e=>parseInt(e,10)));c.length>0&&c[0].length>1&&c[0][0]===a&&(t=c[0][1]),r.codecs.forEach(e=>{if("RTX"===e.name.toUpperCase()&&e.parameters.apt){let r={ssrc:a,codecPayloadType:parseInt(e.parameters.apt,10)};a&&t&&(r.rtx={ssrc:t}),n.push(r),i&&((r=JSON.parse(JSON.stringify(r))).fec={ssrc:a,mechanism:s?"red+ulpfec":"red"},n.push(r))}}),0===n.length&&a&&n.push({ssrc:a});let p=Z.matchPrefix(e,"b=");return p.length&&(p=0===p[0].indexOf("b=TIAS:")?parseInt(p[0].substring(7),10):0===p[0].indexOf("b=AS:")?950*parseInt(p[0].substring(5),10)-16e3:void 0,n.forEach(e=>{e.maxBitrate=p})),n},Z.parseRtcpParameters=function(e){let t={},n=Z.matchPrefix(e,"a=ssrc:").map(e=>Z.parseSsrcMedia(e)).filter(e=>"cname"===e.attribute)[0];n&&(t.cname=n.value,t.ssrc=n.ssrc);let r=Z.matchPrefix(e,"a=rtcp-rsize");return t.reducedSize=r.length>0,t.compound=0===r.length,t.mux=Z.matchPrefix(e,"a=rtcp-mux").length>0,t},Z.writeRtcpParameters=function(e){let t="";return e.reducedSize&&(t+="a=rtcp-rsize\r\n"),e.mux&&(t+="a=rtcp-mux\r\n"),void 0!==e.ssrc&&e.cname&&(t+="a=ssrc:"+e.ssrc+" cname:"+e.cname+"\r\n"),t},Z.parseMsid=function(e){let t,n=Z.matchPrefix(e,"a=msid:");if(1===n.length)return{stream:(t=n[0].substring(7).split(" "))[0],track:t[1]};let r=Z.matchPrefix(e,"a=ssrc:").map(e=>Z.parseSsrcMedia(e)).filter(e=>"msid"===e.attribute);if(r.length>0)return{stream:(t=r[0].value.split(" "))[0],track:t[1]}},Z.parseSctpDescription=function(e){let t,n=Z.parseMLine(e),r=Z.matchPrefix(e,"a=max-message-size:");r.length>0&&(t=parseInt(r[0].substring(19),10)),isNaN(t)&&(t=65536);let i=Z.matchPrefix(e,"a=sctp-port:");if(i.length>0)return{port:parseInt(i[0].substring(12),10),protocol:n.fmt,maxMessageSize:t};let s=Z.matchPrefix(e,"a=sctpmap:");if(s.length>0){let e=s[0].substring(10).split(" ");return{port:parseInt(e[0],10),protocol:e[1],maxMessageSize:t}}},Z.writeSctpDescription=function(e,t){let n=[];return n="DTLS/SCTP"!==e.protocol?["m="+e.kind+" 9 "+e.protocol+" "+t.protocol+"\r\n","c=IN IP4 0.0.0.0\r\n","a=sctp-port:"+t.port+"\r\n"]:["m="+e.kind+" 9 "+e.protocol+" "+t.port+"\r\n","c=IN IP4 0.0.0.0\r\n","a=sctpmap:"+t.port+" "+t.protocol+" 65535\r\n"],void 0!==t.maxMessageSize&&n.push("a=max-message-size:"+t.maxMessageSize+"\r\n"),n.join("")},Z.generateSessionId=function(){return Math.random().toString().substr(2,22)},Z.writeSessionBoilerplate=function(e,t,n){return"v=0\r\no="+(n||"thisisadapterortc")+" "+(e||Z.generateSessionId())+" "+(void 0!==t?t:2)+" IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n"},Z.getDirection=function(e,t){let n=Z.splitLines(e);for(let e=0;e<n.length;e++)switch(n[e]){case"a=sendrecv":case"a=sendonly":case"a=recvonly":case"a=inactive":return n[e].substring(2)}return t?Z.getDirection(t):"sendrecv"},Z.getKind=function(e){return Z.splitLines(e)[0].split(" ")[0].substring(2)},Z.isRejected=function(e){return"0"===e.split(" ",2)[1]},Z.parseMLine=function(e){let t=Z.splitLines(e)[0].substring(2).split(" ");return{kind:t[0],port:parseInt(t[1],10),protocol:t[2],fmt:t.slice(3).join(" ")}},Z.parseOLine=function(e){let t=Z.matchPrefix(e,"o=")[0].substring(2).split(" ");return{username:t[0],sessionId:t[1],sessionVersion:parseInt(t[2],10),netType:t[3],addressType:t[4],address:t[5]}},Z.isValidSDP=function(e){if("string"!=typeof e||0===e.length)return!1;let t=Z.splitLines(e);for(let e=0;e<t.length;e++)if(t[e].length<2||"="!==t[e].charAt(1))return!1;return!0},q=Z;let ec=function({window:e}={},t={shimChrome:!0,shimFirefox:!0,shimSafari:!0}){let n=function(e){let t={browser:null,version:null};if(void 0===e||!e.navigator||!e.navigator.userAgent)return t.browser="Not a browser.",t;let{navigator:n}=e;if(n.userAgentData&&n.userAgentData.brands){let e=n.userAgentData.brands.find(e=>"Chromium"===e.brand);if(e)return{browser:"chrome",version:parseInt(e.version,10)}}return n.mozGetUserMedia?(t.browser="firefox",t.version=d(n.userAgent,/Firefox\/(\d+)\./,1)):n.webkitGetUserMedia||!1===e.isSecureContext&&e.webkitRTCPeerConnection?(t.browser="chrome",t.version=d(n.userAgent,/Chrom(e|ium)\/(\d+)\./,2)):e.RTCPeerConnection&&n.userAgent.match(/AppleWebKit\/(\d+)\./)?(t.browser="safari",t.version=d(n.userAgent,/AppleWebKit\/(\d+)\./,1),t.supportsUnifiedPlan=e.RTCRtpTransceiver&&"currentDirection"in e.RTCRtpTransceiver.prototype):t.browser="Not a supported browser.",t}(e),r={browserDetails:n,commonShim:Q,extractVersion:d,disableLog:h,disableWarnings:u,sdp:q};switch(n.browser){case"chrome":if(!y||!y.shimPeerConnection||!t.shimChrome){f("Chrome shim is not included in this adapter release.");break}if(null===n.version){f("Chrome shim can not determine version, not shimming.");break}f("adapter.js shimming chrome."),r.browserShim=y,eo(e,n),ea(e,n),y.shimGetUserMedia(e,n),y.shimMediaStream(e,n),y.shimPeerConnection(e,n),y.shimOnTrack(e,n),y.shimAddTrackRemoveTrack(e,n),y.shimGetSendersWithDtmf(e,n),y.shimSenderReceiverGetStats(e,n),y.fixNegotiationNeeded(e,n),ee(e,n),et(e,n),ei(e,n),en(e,n),er(e,n),es(e,n);break;case"firefox":if(!E||!E.shimPeerConnection||!t.shimFirefox){f("Firefox shim is not included in this adapter release.");break}f("adapter.js shimming firefox."),r.browserShim=E,eo(e,n),ea(e,n),E.shimGetUserMedia(e,n),E.shimPeerConnection(e,n),E.shimOnTrack(e,n),E.shimRemoveStream(e,n),E.shimSenderGetStats(e,n),E.shimReceiverGetStats(e,n),E.shimRTCDataChannel(e,n),E.shimAddTransceiver(e,n),E.shimGetParameters(e,n),E.shimCreateOffer(e,n),E.shimCreateAnswer(e,n),ee(e,n),ei(e,n),en(e,n),er(e,n);break;case"safari":if(!z||!t.shimSafari){f("Safari shim is not included in this adapter release.");break}f("adapter.js shimming safari."),r.browserShim=z,eo(e,n),ea(e,n),z.shimRTCIceServerUrls(e,n),z.shimCreateOfferLegacy(e,n),z.shimCallbacksAPI(e,n),z.shimLocalStreamsAPI(e,n),z.shimRemoteStreamsAPI(e,n),z.shimTrackEventTransceiver(e,n),z.shimGetUserMedia(e,n),z.shimAudioContext(e,n),ee(e,n),et(e,n),en(e,n),er(e,n),es(e,n);break;default:f("Unsupported browser!")}return r}({window:"undefined"==typeof window?void 0:window}),ep=ec.default||ec,ed=new class{isWebRTCSupported(){return"undefined"!=typeof RTCPeerConnection}isBrowserSupported(){let e=this.getBrowser(),t=this.getVersion();return!!this.supportedBrowsers.includes(e)&&("chrome"===e?t>=this.minChromeVersion:"firefox"===e?t>=this.minFirefoxVersion:"safari"===e&&!this.isIOS&&t>=this.minSafariVersion)}getBrowser(){return ep.browserDetails.browser}getVersion(){return ep.browserDetails.version||0}isUnifiedPlanSupported(){let e,t=this.getBrowser(),n=ep.browserDetails.version||0;if("chrome"===t&&n<this.minChromeVersion)return!1;if("firefox"===t&&n>=this.minFirefoxVersion)return!0;if(!window.RTCRtpTransceiver||!("currentDirection"in RTCRtpTransceiver.prototype))return!1;let r=!1;try{(e=new RTCPeerConnection).addTransceiver("audio"),r=!0}catch(e){}finally{e&&e.close()}return r}toString(){return`Supports:
+    browser:${this.getBrowser()}
+    version:${this.getVersion()}
+    isIOS:${this.isIOS}
+    isWebRTCSupported:${this.isWebRTCSupported()}
+    isBrowserSupported:${this.isBrowserSupported()}
+    isUnifiedPlanSupported:${this.isUnifiedPlanSupported()}`}constructor(){this.isIOS="undefined"!=typeof navigator&&["iPad","iPhone","iPod"].includes(navigator.platform),this.supportedBrowsers=["firefox","chrome","safari"],this.minFirefoxVersion=59,this.minChromeVersion=72,this.minSafariVersion=605}},el=e=>!e||/^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$/.test(e),eh=()=>Math.random().toString(36).slice(2),eu={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"}],sdpSemantics:"unified-plan"},ef=new class extends n{noop(){}blobToArrayBuffer(e,t){let n=new FileReader;return n.onload=function(e){e.target&&t(e.target.result)},n.readAsArrayBuffer(e),n}binaryStringToArrayBuffer(e){let t=new Uint8Array(e.length);for(let n=0;n<e.length;n++)t[n]=255&e.charCodeAt(n);return t.buffer}isSecure(){return"https:"===location.protocol}constructor(...e){super(...e),this.CLOUD_HOST="0.peerjs.com",this.CLOUD_PORT=443,this.chunkedBrowsers={Chrome:1,chrome:1},this.defaultConfig=eu,this.browser=ed.getBrowser(),this.browserVersion=ed.getVersion(),this.pack=s,this.unpack=i,this.supports=function(){let e,t={browser:ed.isBrowserSupported(),webRTC:ed.isWebRTCSupported(),audioVideo:!1,data:!1,binaryBlob:!1,reliable:!1};if(!t.webRTC)return t;try{let n;e=new RTCPeerConnection(eu),t.audioVideo=!0;try{n=e.createDataChannel("_PEERJSTEST",{ordered:!0}),t.data=!0,t.reliable=!!n.ordered;try{n.binaryType="blob",t.binaryBlob=!ed.isIOS}catch(e){}}catch(e){}finally{n&&n.close()}}catch(e){}finally{e&&e.close()}return t}(),this.validateId=el,this.randomToken=eh}};"use strict";var em=new class{get logLevel(){return this._logLevel}set logLevel(e){this._logLevel=e}log(...e){this._logLevel>=3&&this._print(3,...e)}warn(...e){this._logLevel>=2&&this._print(2,...e)}error(...e){this._logLevel>=1&&this._print(1,...e)}setLogFunction(e){this._print=e}_print(e,...t){let n=["PeerJS: ",...t];for(let e in n)n[e]instanceof Error&&(n[e]="("+n[e].name+") "+n[e].message);e>=3?console.log(...n):e>=2?console.warn("WARNING",...n):e>=1&&console.error("ERROR",...n)}constructor(){this._logLevel=0}},e_={},eg=Object.prototype.hasOwnProperty,ey="~";function eC(){}function ev(e,t,n){this.fn=e,this.context=t,this.once=n||!1}function eb(e,t,n,r,i){if("function"!=typeof n)throw TypeError("The listener must be a function");var s=new ev(n,r||e,i),o=ey?ey+t:t;return e._events[o]?e._events[o].fn?e._events[o]=[e._events[o],s]:e._events[o].push(s):(e._events[o]=s,e._eventsCount++),e}function eT(e,t){0==--e._eventsCount?e._events=new eC:delete e._events[t]}function eS(){this._events=new eC,this._eventsCount=0}Object.create&&(eC.prototype=Object.create(null),new eC().__proto__||(ey=!1)),eS.prototype.eventNames=function(){var e,t,n=[];if(0===this._eventsCount)return n;for(t in e=this._events)eg.call(e,t)&&n.push(ey?t.slice(1):t);return Object.getOwnPropertySymbols?n.concat(Object.getOwnPropertySymbols(e)):n},eS.prototype.listeners=function(e){var t=ey?ey+e:e,n=this._events[t];if(!n)return[];if(n.fn)return[n.fn];for(var r=0,i=n.length,s=Array(i);r<i;r++)s[r]=n[r].fn;return s},eS.prototype.listenerCount=function(e){var t=ey?ey+e:e,n=this._events[t];return n?n.fn?1:n.length:0},eS.prototype.emit=function(e,t,n,r,i,s){var o=ey?ey+e:e;if(!this._events[o])return!1;var a,c,p=this._events[o],d=arguments.length;if(p.fn){switch(p.once&&this.removeListener(e,p.fn,void 0,!0),d){case 1:return p.fn.call(p.context),!0;case 2:return p.fn.call(p.context,t),!0;case 3:return p.fn.call(p.context,t,n),!0;case 4:return p.fn.call(p.context,t,n,r),!0;case 5:return p.fn.call(p.context,t,n,r,i),!0;case 6:return p.fn.call(p.context,t,n,r,i,s),!0}for(c=1,a=Array(d-1);c<d;c++)a[c-1]=arguments[c];p.fn.apply(p.context,a)}else{var l,h=p.length;for(c=0;c<h;c++)switch(p[c].once&&this.removeListener(e,p[c].fn,void 0,!0),d){case 1:p[c].fn.call(p[c].context);break;case 2:p[c].fn.call(p[c].context,t);break;case 3:p[c].fn.call(p[c].context,t,n);break;case 4:p[c].fn.call(p[c].context,t,n,r);break;default:if(!a)for(l=1,a=Array(d-1);l<d;l++)a[l-1]=arguments[l];p[c].fn.apply(p[c].context,a)}}return!0},eS.prototype.on=function(e,t,n){return eb(this,e,t,n,!1)},eS.prototype.once=function(e,t,n){return eb(this,e,t,n,!0)},eS.prototype.removeListener=function(e,t,n,r){var i=ey?ey+e:e;if(!this._events[i])return this;if(!t)return eT(this,i),this;var s=this._events[i];if(s.fn)s.fn!==t||r&&!s.once||n&&s.context!==n||eT(this,i);else{for(var o=0,a=[],c=s.length;o<c;o++)(s[o].fn!==t||r&&!s[o].once||n&&s[o].context!==n)&&a.push(s[o]);a.length?this._events[i]=1===a.length?a[0]:a:eT(this,i)}return this},eS.prototype.removeAllListeners=function(e){var t;return e?(t=ey?ey+e:e,this._events[t]&&eT(this,t)):(this._events=new eC,this._eventsCount=0),this},eS.prototype.off=eS.prototype.removeListener,eS.prototype.addListener=eS.prototype.on,eS.prefixed=ey,eS.EventEmitter=eS,e_=eS;var ek=function(e){return e.Data="data",e.Media="media",e}({}),eR=function(e){return e.BrowserIncompatible="browser-incompatible",e.Disconnected="disconnected",e.InvalidID="invalid-id",e.InvalidKey="invalid-key",e.Network="network",e.PeerUnavailable="peer-unavailable",e.SslUnavailable="ssl-unavailable",e.ServerError="server-error",e.SocketError="socket-error",e.SocketClosed="socket-closed",e.UnavailableID="unavailable-id",e.WebRTC="webrtc",e}({}),eP=function(e){return e.NegotiationFailed="negotiation-failed",e.ConnectionClosed="connection-closed",e}({}),ew=function(e){return e.NotOpenYet="not-open-yet",e.MessageToBig="message-too-big",e}({}),eE=function(e){return e.Binary="binary",e.BinaryUTF8="binary-utf8",e.JSON="json",e.None="raw",e}({}),ex=function(e){return e.Message="message",e.Disconnected="disconnected",e.Error="error",e.Close="close",e}({}),eD=function(e){return e.Heartbeat="HEARTBEAT",e.Candidate="CANDIDATE",e.Offer="OFFER",e.Answer="ANSWER",e.Open="OPEN",e.Error="ERROR",e.IdTaken="ID-TAKEN",e.InvalidKey="INVALID-KEY",e.Leave="LEAVE",e.Expire="EXPIRE",e}({});let eI="1.5.5";class eM extends e_.EventEmitter{start(e,t){this._id=e;let n=`${this._baseUrl}&id=${e}&token=${t}`;!this._socket&&this._disconnected&&(this._socket=new WebSocket(n+"&version="+eI),this._disconnected=!1,this._socket.onmessage=e=>{let t;try{t=JSON.parse(e.data),em.log("Server message received:",t)}catch(t){em.log("Invalid server message",e.data);return}this.emit(ex.Message,t)},this._socket.onclose=e=>{this._disconnected||(em.log("Socket closed.",e),this._cleanup(),this._disconnected=!0,this.emit(ex.Disconnected))},this._socket.onopen=()=>{this._disconnected||(this._sendQueuedMessages(),em.log("Socket open"),this._scheduleHeartbeat())})}_scheduleHeartbeat(){this._wsPingTimer=setTimeout(()=>{this._sendHeartbeat()},this.pingInterval)}_sendHeartbeat(){if(!this._wsOpen())return void em.log("Cannot send heartbeat, because socket closed");let e=JSON.stringify({type:eD.Heartbeat});this._socket.send(e),this._scheduleHeartbeat()}_wsOpen(){return!!this._socket&&1===this._socket.readyState}_sendQueuedMessages(){let e=[...this._messagesQueue];for(let t of(this._messagesQueue=[],e))this.send(t)}send(e){if(this._disconnected)return;if(!this._id)return void this._messagesQueue.push(e);if(!e.type)return void this.emit(ex.Error,"Invalid message");if(!this._wsOpen())return;let t=JSON.stringify(e);this._socket.send(t)}close(){this._disconnected||(this._cleanup(),this._disconnected=!0)}_cleanup(){this._socket&&(this._socket.onopen=this._socket.onmessage=this._socket.onclose=null,this._socket.close(),this._socket=void 0),clearTimeout(this._wsPingTimer)}constructor(e,t,n,r,i,s=5e3){super(),this.pingInterval=s,this._disconnected=!0,this._messagesQueue=[],this._baseUrl=(e?"wss://":"ws://")+t+":"+n+r+"peerjs?key="+i}}class eO{startConnection(e){let t=this._startPeerConnection();if(this.connection.peerConnection=t,this.connection.type===ek.Media&&e._stream&&this._addTracksToConnection(e._stream,t),e.originator){let n=this.connection,r={ordered:!!e.reliable},i=t.createDataChannel(n.label,r);n._initializeDataChannel(i),this._makeOffer()}else this.handleSDP("OFFER",e.sdp)}_startPeerConnection(){em.log("Creating RTCPeerConnection.");let e=new RTCPeerConnection(this.connection.provider.options.config);return this._setupListeners(e),e}_setupListeners(e){let t=this.connection.peer,n=this.connection.connectionId,r=this.connection.type,i=this.connection.provider;em.log("Listening for ICE candidates."),e.onicecandidate=e=>{e.candidate&&e.candidate.candidate&&(em.log(`Received ICE candidates for ${t}:`,e.candidate),i.socket.send({type:eD.Candidate,payload:{candidate:e.candidate,type:r,connectionId:n},dst:t}))},e.oniceconnectionstatechange=()=>{switch(e.iceConnectionState){case"failed":em.log("iceConnectionState is failed, closing connections to "+t),this.connection.emitError(eP.NegotiationFailed,"Negotiation of connection to "+t+" failed."),this.connection.close();break;case"closed":em.log("iceConnectionState is closed, closing connections to "+t),this.connection.emitError(eP.ConnectionClosed,"Connection to "+t+" closed."),this.connection.close();break;case"disconnected":em.log("iceConnectionState changed to disconnected on the connection with "+t);break;case"completed":e.onicecandidate=()=>{}}this.connection.emit("iceStateChanged",e.iceConnectionState)},em.log("Listening for data channel"),e.ondatachannel=e=>{em.log("Received data channel");let r=e.channel;i.getConnection(t,n)._initializeDataChannel(r)},em.log("Listening for remote stream"),e.ontrack=e=>{em.log("Received remote stream");let r=e.streams[0],s=i.getConnection(t,n);s.type===ek.Media&&this._addStreamToMediaConnection(r,s)}}cleanup(){em.log("Cleaning up PeerConnection to "+this.connection.peer);let e=this.connection.peerConnection;if(!e)return;this.connection.peerConnection=null,e.onicecandidate=e.oniceconnectionstatechange=e.ondatachannel=e.ontrack=()=>{};let t="closed"!==e.signalingState,n=!1,r=this.connection.dataChannel;r&&(n=!!r.readyState&&"closed"!==r.readyState),(t||n)&&e.close()}async _makeOffer(){let e=this.connection.peerConnection,t=this.connection.provider;try{let n=await e.createOffer(this.connection.options.constraints);em.log("Created offer."),this.connection.options.sdpTransform&&"function"==typeof this.connection.options.sdpTransform&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),em.log("Set localDescription:",n,`for:${this.connection.peer}`);let r={sdp:n,type:this.connection.type,connectionId:this.connection.connectionId,metadata:this.connection.metadata};if(this.connection.type===ek.Data){let e=this.connection;r={...r,label:e.label,reliable:e.reliable,serialization:e.serialization}}t.socket.send({type:eD.Offer,payload:r,dst:this.connection.peer})}catch(e){"OperationError: Failed to set local offer sdp: Called in wrong state: kHaveRemoteOffer"!=e&&(t.emitError(eR.WebRTC,e),em.log("Failed to setLocalDescription, ",e))}}catch(e){t.emitError(eR.WebRTC,e),em.log("Failed to createOffer, ",e)}}async _makeAnswer(){let e=this.connection.peerConnection,t=this.connection.provider;try{let n=await e.createAnswer();em.log("Created answer."),this.connection.options.sdpTransform&&"function"==typeof this.connection.options.sdpTransform&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),em.log("Set localDescription:",n,`for:${this.connection.peer}`),t.socket.send({type:eD.Answer,payload:{sdp:n,type:this.connection.type,connectionId:this.connection.connectionId},dst:this.connection.peer})}catch(e){t.emitError(eR.WebRTC,e),em.log("Failed to setLocalDescription, ",e)}}catch(e){t.emitError(eR.WebRTC,e),em.log("Failed to create answer, ",e)}}async handleSDP(e,t){t=new RTCSessionDescription(t);let n=this.connection.peerConnection,r=this.connection.provider;em.log("Setting remote description",t);try{await n.setRemoteDescription(t),em.log(`Set remoteDescription:${e} for:${this.connection.peer}`),"OFFER"===e&&await this._makeAnswer()}catch(e){r.emitError(eR.WebRTC,e),em.log("Failed to setRemoteDescription, ",e)}}async handleCandidate(e){em.log("handleCandidate:",e);try{await this.connection.peerConnection.addIceCandidate(e),em.log(`Added ICE candidate for:${this.connection.peer}`)}catch(e){this.connection.provider.emitError(eR.WebRTC,e),em.log("Failed to handleCandidate, ",e)}}_addTracksToConnection(e,t){if(em.log(`add tracks from stream ${e.id} to peer connection`),!t.addTrack)return em.error("Your browser does't support RTCPeerConnection#addTrack. Ignored.");e.getTracks().forEach(n=>{t.addTrack(n,e)})}_addStreamToMediaConnection(e,t){em.log(`add stream ${e.id} to media connection ${t.connectionId}`),t.addStream(e)}constructor(e){this.connection=e}}class eL extends e_.EventEmitter{emitError(e,t){em.error("Error:",t),this.emit("error",new eA(`${e}`,t))}}class eA extends Error{constructor(e,t){"string"==typeof t?super(t):(super(),Object.assign(this,t)),this.type=e}}class ej extends eL{get open(){return this._open}constructor(e,t,n){super(),this.peer=e,this.provider=t,this.options=n,this._open=!1,this.metadata=n.metadata}}class eB extends ej{get type(){return ek.Media}get localStream(){return this._localStream}get remoteStream(){return this._remoteStream}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{em.log(`DC#${this.connectionId} dc connection success`),this.emit("willCloseOnRemote")},this.dataChannel.onclose=()=>{em.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}addStream(e){em.log("Receiving stream",e),this._remoteStream=e,super.emit("stream",e)}handleMessage(e){let t=e.type,n=e.payload;switch(e.type){case eD.Answer:this._negotiator.handleSDP(t,n.sdp),this._open=!0;break;case eD.Candidate:this._negotiator.handleCandidate(n.candidate);break;default:em.warn(`Unrecognized message type:${t} from peer:${this.peer}`)}}answer(e,t={}){if(this._localStream)return void em.warn("Local stream already exists on this MediaConnection. Are you answering a call twice?");for(let n of(this._localStream=e,t&&t.sdpTransform&&(this.options.sdpTransform=t.sdpTransform),this._negotiator.startConnection({...this.options._payload,_stream:e}),this.provider._getMessages(this.connectionId)))this.handleMessage(n);this._open=!0}close(){this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this._localStream=null,this._remoteStream=null,this.provider&&(this.provider._removeConnection(this),this.provider=null),this.options&&this.options._stream&&(this.options._stream=null),this.open&&(this._open=!1,super.emit("close"))}constructor(e,t,n){super(e,t,n),this._localStream=this.options._stream,this.connectionId=this.options.connectionId||eB.ID_PREFIX+ef.randomToken(),this._negotiator=new eO(this),this._localStream&&this._negotiator.startConnection({_stream:this._localStream,originator:!0})}}eB.ID_PREFIX="mc_";class eU{_buildRequest(e){let t=this._options.secure?"https":"http",{host:n,port:r,path:i,key:s}=this._options,o=new URL(`${t}://${n}:${r}${i}${s}/${e}`);return o.searchParams.set("ts",`${Date.now()}${Math.random()}`),o.searchParams.set("version",eI),fetch(o.href,{referrerPolicy:this._options.referrerPolicy})}async retrieveId(){try{let e=await this._buildRequest("id");if(200!==e.status)throw Error(`Error. Status:${e.status}`);return e.text()}catch(t){em.error("Error retrieving ID",t);let e="";throw"/"===this._options.path&&this._options.host!==ef.CLOUD_HOST&&(e=" If you passed in a `path` to your self-hosted PeerServer, you'll also need to pass in that same path when creating a new Peer."),Error("Could not get an ID from the server."+e)}}async listAllPeers(){try{let e=await this._buildRequest("peers");if(200!==e.status){if(401===e.status){let e="";throw e=this._options.host===ef.CLOUD_HOST?"It looks like you're using the cloud server. You can email team@peerjs.com to enable peer listing for your API key.":"You need to enable `allow_discovery` on your self-hosted PeerServer to use this feature.",Error("It doesn't look like you have permission to list peers IDs. "+e)}throw Error(`Error. Status:${e.status}`)}return e.json()}catch(e){throw em.error("Error retrieving list peers",e),Error("Could not get list peers from the server."+e)}}constructor(e){this._options=e}}class eF extends ej{get type(){return ek.Data}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{em.log(`DC#${this.connectionId} dc connection success`),this._open=!0,this.emit("open")},this.dataChannel.onmessage=e=>{em.log(`DC#${this.connectionId} dc onmessage:`,e.data)},this.dataChannel.onclose=()=>{em.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}close(e){if(e?.flush)return void this.send({__peerData:{type:"close"}});this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this.provider&&(this.provider._removeConnection(this),this.provider=null),this.dataChannel&&(this.dataChannel.onopen=null,this.dataChannel.onmessage=null,this.dataChannel.onclose=null,this.dataChannel=null),this.open&&(this._open=!1,super.emit("close"))}send(e,t=!1){return this.open?this._send(e,t):void this.emitError(ew.NotOpenYet,"Connection is not open. You should listen for the `open` event before sending messages.")}async handleMessage(e){let t=e.payload;switch(e.type){case eD.Answer:await this._negotiator.handleSDP(e.type,t.sdp);break;case eD.Candidate:await this._negotiator.handleCandidate(t.candidate);break;default:em.warn("Unrecognized message type:",e.type,"from peer:",this.peer)}}constructor(e,t,n){super(e,t,n),this.connectionId=this.options.connectionId||eF.ID_PREFIX+eh(),this.label=this.options.label||this.connectionId,this.reliable=!!this.options.reliable,this._negotiator=new eO(this),this._negotiator.startConnection(this.options._payload||{originator:!0,reliable:this.reliable})}}eF.ID_PREFIX="dc_",eF.MAX_BUFFERED_AMOUNT=8388608;class eN extends eF{get bufferSize(){return this._bufferSize}_initializeDataChannel(e){super._initializeDataChannel(e),this.dataChannel.binaryType="arraybuffer",this.dataChannel.addEventListener("message",e=>this._handleDataMessage(e))}_bufferedSend(e){(this._buffering||!this._trySend(e))&&(this._buffer.push(e),this._bufferSize=this._buffer.length)}_trySend(e){if(!this.open)return!1;if(this.dataChannel.bufferedAmount>eF.MAX_BUFFERED_AMOUNT)return this._buffering=!0,setTimeout(()=>{this._buffering=!1,this._tryBuffer()},50),!1;try{this.dataChannel.send(e)}catch(e){return em.error(`DC#:${this.connectionId} Error when sending:`,e),this._buffering=!0,this.close(),!1}return!0}_tryBuffer(){if(!this.open||0===this._buffer.length)return;let e=this._buffer[0];this._trySend(e)&&(this._buffer.shift(),this._bufferSize=this._buffer.length,this._tryBuffer())}close(e){if(e?.flush)return void this.send({__peerData:{type:"close"}});this._buffer=[],this._bufferSize=0,super.close()}constructor(...e){super(...e),this._buffer=[],this._bufferSize=0,this._buffering=!1}}class ez extends eN{close(e){super.close(e),this._chunkedData={}}_handleDataMessage({data:e}){let t=i(e),n=t.__peerData;if(n)return"close"===n.type?void this.close():void this._handleChunk(t);this.emit("data",t)}_handleChunk(e){let t=e.__peerData,n=this._chunkedData[t]||{data:[],count:0,total:e.total};if(n.data[e.n]=new Uint8Array(e.data),n.count++,this._chunkedData[t]=n,n.total===n.count){delete this._chunkedData[t];let e=function(e){let t=0;for(let n of e)t+=n.byteLength;let n=new Uint8Array(t),r=0;for(let t of e)n.set(t,r),r+=t.byteLength;return n}(n.data);this._handleDataMessage({data:e})}}_send(e,t){let n=s(e);return n instanceof Promise?this._send_blob(n):!t&&n.byteLength>this.chunker.chunkedMTU?void this._sendChunks(n):void this._bufferedSend(n)}async _send_blob(e){let t=await e;if(t.byteLength>this.chunker.chunkedMTU)return void this._sendChunks(t);this._bufferedSend(t)}_sendChunks(e){let t=this.chunker.chunk(e);for(let e of(em.log(`DC#${this.connectionId} Try to send ${t.length} chunks...`),t))this.send(e,!0)}constructor(e,t,r){super(e,t,r),this.chunker=new n,this.serialization=eE.Binary,this._chunkedData={}}}class e$ extends eN{_handleDataMessage({data:e}){super.emit("data",e)}_send(e,t){this._bufferedSend(e)}constructor(...e){super(...e),this.serialization=eE.None}}class eV extends eN{_handleDataMessage({data:e}){let t=this.parse(this.decoder.decode(e)),n=t.__peerData;if(n&&"close"===n.type)return void this.close();this.emit("data",t)}_send(e,t){let n=this.encoder.encode(this.stringify(e));if(n.byteLength>=ef.chunkedMTU)return void this.emitError(ew.MessageToBig,"Message too big for JSON channel");this._bufferedSend(n)}constructor(...e){super(...e),this.serialization=eE.JSON,this.encoder=new TextEncoder,this.decoder=new TextDecoder,this.stringify=JSON.stringify,this.parse=JSON.parse}}class eG extends eL{get id(){return this._id}get options(){return this._options}get open(){return this._open}get socket(){return this._socket}get connections(){let e=Object.create(null);for(let[t,n]of this._connections)e[t]=n;return e}get destroyed(){return this._destroyed}get disconnected(){return this._disconnected}_createServerConnection(){let e=new eM(this._options.secure,this._options.host,this._options.port,this._options.path,this._options.key,this._options.pingInterval);return e.on(ex.Message,e=>{this._handleMessage(e)}),e.on(ex.Error,e=>{this._abort(eR.SocketError,e)}),e.on(ex.Disconnected,()=>{this.disconnected||(this.emitError(eR.Network,"Lost connection to server."),this.disconnect())}),e.on(ex.Close,()=>{this.disconnected||this._abort(eR.SocketClosed,"Underlying socket is already closed.")}),e}_initialize(e){this._id=e,this.socket.start(e,this._options.token)}_handleMessage(e){let t=e.type,n=e.payload,r=e.src;switch(t){case eD.Open:this._lastServerId=this.id,this._open=!0,this.emit("open",this.id);break;case eD.Error:this._abort(eR.ServerError,n.msg);break;case eD.IdTaken:this._abort(eR.UnavailableID,`ID "${this.id}" is taken`);break;case eD.InvalidKey:this._abort(eR.InvalidKey,`API KEY "${this._options.key}" is invalid`);break;case eD.Leave:em.log(`Received leave message from ${r}`),this._cleanupPeer(r),this._connections.delete(r);break;case eD.Expire:this.emitError(eR.PeerUnavailable,`Could not connect to peer ${r}`);break;case eD.Offer:{let e=n.connectionId,t=this.getConnection(r,e);if(t&&(t.close(),em.warn(`Offer received for existing Connection ID:${e}`)),n.type===ek.Media){let i=new eB(r,this,{connectionId:e,_payload:n,metadata:n.metadata});t=i,this._addConnection(r,t),this.emit("call",i)}else{if(n.type!==ek.Data)return void em.warn(`Received malformed connection type:${n.type}`);let i=new this._serializers[n.serialization](r,this,{connectionId:e,_payload:n,metadata:n.metadata,label:n.label,serialization:n.serialization,reliable:n.reliable});t=i,this._addConnection(r,t),this.emit("connection",i)}for(let n of this._getMessages(e))t.handleMessage(n);break}default:{if(!n)return void em.warn(`You received a malformed message from ${r} of type ${t}`);let i=n.connectionId,s=this.getConnection(r,i);s&&s.peerConnection?s.handleMessage(e):i?this._storeMessage(i,e):em.warn("You received an unrecognized message:",e)}}}_storeMessage(e,t){this._lostMessages.has(e)||this._lostMessages.set(e,[]),this._lostMessages.get(e).push(t)}_getMessages(e){let t=this._lostMessages.get(e);return t?(this._lostMessages.delete(e),t):[]}connect(e,t={}){if(t={serialization:"default",...t},this.disconnected){em.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect, or call reconnect on this peer if you believe its ID to still be available."),this.emitError(eR.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}let n=new this._serializers[t.serialization](e,this,t);return this._addConnection(e,n),n}call(e,t,n={}){if(this.disconnected){em.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect."),this.emitError(eR.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}if(!t)return void em.error("To call a peer, you must provide a stream from your browser's `getUserMedia`.");let r=new eB(e,this,{...n,_stream:t});return this._addConnection(e,r),r}_addConnection(e,t){em.log(`add connection ${t.type}:${t.connectionId} to peerId:${e}`),this._connections.has(e)||this._connections.set(e,[]),this._connections.get(e).push(t)}_removeConnection(e){let t=this._connections.get(e.peer);if(t){let n=t.indexOf(e);-1!==n&&t.splice(n,1)}this._lostMessages.delete(e.connectionId)}getConnection(e,t){let n=this._connections.get(e);if(!n)return null;for(let e of n)if(e.connectionId===t)return e;return null}_delayedAbort(e,t){setTimeout(()=>{this._abort(e,t)},0)}_abort(e,t){em.error("Aborting!"),this.emitError(e,t),this._lastServerId?this.disconnect():this.destroy()}destroy(){this.destroyed||(em.log(`Destroy peer with ID:${this.id}`),this.disconnect(),this._cleanup(),this._destroyed=!0,this.emit("close"))}_cleanup(){for(let e of this._connections.keys())this._cleanupPeer(e),this._connections.delete(e);this.socket.removeAllListeners()}_cleanupPeer(e){let t=this._connections.get(e);if(t)for(let e of t)e.close()}disconnect(){if(this.disconnected)return;let e=this.id;em.log(`Disconnect peer with ID:${e}`),this._disconnected=!0,this._open=!1,this.socket.close(),this._lastServerId=e,this._id=null,this.emit("disconnected",e)}reconnect(){if(this.disconnected&&!this.destroyed)em.log(`Attempting reconnection to server with ID ${this._lastServerId}`),this._disconnected=!1,this._initialize(this._lastServerId);else if(this.destroyed)throw Error("This peer cannot reconnect to the server. It has already been destroyed.");else if(this.disconnected||this.open)throw Error(`Peer ${this.id} cannot reconnect because it is not disconnected from the server!`);else em.error("In a hurry? We're still trying to make the initial connection!")}listAllPeers(e=e=>{}){this._api.listAllPeers().then(t=>e(t)).catch(e=>this._abort(eR.ServerError,e))}constructor(e,t){let n;if(super(),this._serializers={raw:e$,json:eV,binary:ez,"binary-utf8":ez,default:ez},this._id=null,this._lastServerId=null,this._destroyed=!1,this._disconnected=!1,this._open=!1,this._connections=new Map,this._lostMessages=new Map,e&&e.constructor==Object?t=e:e&&(n=e.toString()),t={debug:0,host:ef.CLOUD_HOST,port:ef.CLOUD_PORT,path:"/",key:eG.DEFAULT_KEY,token:ef.randomToken(),config:ef.defaultConfig,referrerPolicy:"strict-origin-when-cross-origin",serializers:{},...t},this._options=t,this._serializers={...this._serializers,...this.options.serializers},"/"===this._options.host&&(this._options.host=window.location.hostname),this._options.path&&("/"!==this._options.path[0]&&(this._options.path="/"+this._options.path),"/"!==this._options.path[this._options.path.length-1]&&(this._options.path+="/")),void 0===this._options.secure&&this._options.host!==ef.CLOUD_HOST?this._options.secure=ef.isSecure():this._options.host==ef.CLOUD_HOST&&(this._options.secure=!0),this._options.logFunction&&em.setLogFunction(this._options.logFunction),em.logLevel=this._options.debug||0,this._api=new eU(t),this._socket=this._createServerConnection(),!ef.supports.audioVideo&&!ef.supports.data)return void this._delayedAbort(eR.BrowserIncompatible,"The current browser does not support WebRTC");if(n&&!ef.validateId(n))return void this._delayedAbort(eR.InvalidID,`ID "${n}" is invalid`);n?this._initialize(n):this._api.retrieveId().then(e=>this._initialize(e)).catch(e=>this._abort(eR.ServerError,e))}}eG.DEFAULT_KEY="peerjs",window.peerjs={Peer:eG,util:ef},window.Peer=eG})();
+</script>
+<script>
+/* =================== CONFIGURACIÓN =================== */
+const FIREBASE_URL = ""; // ← pegá acá la URL de tu Realtime Database para fijarla para todo el curso
+const CASE_SECONDS = 40;
+const MAX_PLAYERS = 40;
+const REVEAL_SECONDS = 16;
+
+/* =================== EXPEDIENTES — CLASE 7 =================== */
+const IA = "La IA misma";
+const CASES = [
+ {id:"c1", exp:"EXP-07-01", title:"El algoritmo que no quería mujeres", place:"Cooperativa algodonera · El Colorado",
+  story:"Una cooperativa compra un sistema que filtra currículums para puestos técnicos. Durante un año descarta casi todas las postulaciones de mujeres. Lo habían entrenado con diez años de contrataciones casi siempre masculinas y nadie revisó sus resultados.",
+  ia:"Yo solo repetí el patrón que me enseñaron. Aprendí del pasado, como me pidieron.",
+  actors:[{t:"La empresa que vendió el sistema",s:"entrenó con datos sesgados y no los corrigió"},{t:IA,s:"el modelo que filtró los CV"},{t:"Las postulantes",s:"enviaron sus currículums"},{t:"La cooperativa",s:"lo usó un año sin auditar ni revisar"},{t:"El Ministerio de Trabajo",s:"no tenía denuncias"}],
+  ok:[0,3],
+  why:"La IA no es un agente moral: no decide con libertad ni puede rendir cuentas. Responde quien la entrenó con datos sesgados sin mitigarlos y quien la usó sin supervisión humana. Es el caso real del reclutador de Amazon, trasladado a nuestra zona.",
+  norm:"UNESCO 2021 · Equidad y no discriminación · Responsabilidad y rendición de cuentas"},
+ {id:"c2", exp:"EXP-07-02", title:"Triage equivocado", place:"Guardia del hospital regional",
+  story:"Un sistema de IA clasifica la urgencia de cada paciente. A una mujer de 52 años con síntomas atípicos de infarto la marca como «leve». La médica, que cubría dos guardias seguidas, firmó la clasificación sin revisarla. El fabricante sabía que el sistema fallaba más con mujeres y no lo informó.",
+  ia:"Mi precisión promedio es del 94 %. Esta paciente estaba en el 6 % restante.",
+  actors:[{t:"La paciente",s:"no describió bien sus síntomas"},{t:"El hospital",s:"lo adoptó sin protocolo y con guardias dobles"},{t:IA,s:"el sistema de triage"},{t:"La médica de guardia",s:"firmó sin revisar"},{t:"El fabricante",s:"ocultó sus límites conocidos"}],
+  ok:[1,3,4],
+  why:"La responsabilidad se reparte: el fabricante debía ser transparente sobre sus límites, el hospital debía garantizar supervisión humana real (no una firma cansada) y la médica conserva el deber profesional de revisar. La IA es una herramienta, no un profesional de la salud.",
+  norm:"UNESCO 2021 · Supervisión y decisión humanas · Transparencia y explicabilidad"},
+ {id:"c3", exp:"EXP-07-03", title:"Ruta 81, tres de la mañana", place:"Ruta Nacional 81 · prueba de camión autónomo",
+  story:"Un camión autónomo en prueba atropella a un ciclista. El sistema lo detectó segundos antes, pero lo clasificó como «objeto desconocido». La empresa había desactivado el freno de emergencia para evitar frenadas bruscas y la conductora de respaldo miraba el celular. Vialidad autorizó la prueba sin pedir protocolo de seguridad.",
+  ia:"Detecté algo. No sabía qué era. No tenía permiso para frenar.",
+  actors:[{t:"La empresa operadora",s:"desactivó el freno de emergencia"},{t:"La conductora de respaldo",s:"miraba el celular"},{t:"El ciclista",s:"circulaba de noche"},{t:IA,s:"el sistema de conducción"},{t:"Vialidad provincial",s:"autorizó sin protocolo"}],
+  ok:[0,1,4],
+  why:"Inspirado en el caso de Uber en Tempe (2018): el sistema vio a la víctima, pero las decisiones humanas de diseño y de control fallaron. Quien desactiva una salvaguarda, quien debía vigilar y quien autoriza sin exigir seguridad responden. El ciclista circulaba por donde podía.",
+  norm:"UNESCO 2021 · Seguridad y protección · Mecanismos de apagado y control humano"},
+ {id:"c4", exp:"EXP-07-04", title:"La cara equivocada", place:"Plaza central · cámaras municipales",
+  story:"Las nuevas cámaras con reconocimiento facial señalan a un joven qom como prófugo. La policía lo detiene catorce horas sin verificar su identidad. El proveedor sabía que el sistema se equivoca mucho más con pieles oscuras. El municipio lo instaló sin evaluación de impacto ni consulta a la comunidad.",
+  ia:"Coincidencia del 71 %. El umbral lo fijaron ellos, no yo.",
+  actors:[{t:IA,s:"el reconocimiento facial"},{t:"El joven detenido",s:"pasaba por la plaza"},{t:"El municipio",s:"instaló sin evaluación de impacto"},{t:"La policía",s:"detuvo sin verificar"},{t:"El proveedor",s:"conocía el sesgo y lo vendió igual"}],
+  ok:[2,3,4],
+  why:"Un 71 % de coincidencia no es una prueba: decidir detener a alguien es un acto humano. El proveedor ocultó un sesgo conocido, el municipio no evaluó el impacto sobre derechos y la policía no verificó. Los datos biométricos son datos sensibles.",
+  norm:"Ley 25.326 · Datos sensibles (art. 2 y 7) · UNESCO 2021 · Proporcionalidad y no discriminación"},
+ {id:"c5", exp:"EXP-07-05", title:"La intendenta que nunca habló", place:"Grupos de WhatsApp del pueblo",
+  story:"Circula un audio de la intendenta anunciando un corte de agua por una semana. Es falso: lo fabricó un militante con una app gratuita de clonación de voz que no pide consentimiento ni deja marca de agua. Una radio local lo pasó al aire sin chequear. Hubo acaparamiento y peleas en los almacenes.",
+  ia:"Yo clono voces. Es lo que hago. No pregunto para qué.",
+  actors:[{t:"Quien fabricó el audio",s:"lo creó y lo difundió"},{t:"La radio local",s:"lo emitió sin chequear"},{t:"Los vecinos que reenviaron",s:"lo compartieron asustados"},{t:IA,s:"el clonador de voz"},{t:"La empresa de la app",s:"sin consentimiento ni marca de agua"}],
+  ok:[0,1,4],
+  why:"La responsabilidad principal es de quien fabricó el deepfake, del medio que tenía el deber profesional de verificar y de la empresa que liberó una herramienta sin salvaguardas. Reenviar sin pensar no es inocente, pero quien fue engañado no carga con el daño principal.",
+  norm:"UNESCO 2021 · Información y medios · Responsabilidad de desarrolladores"},
+ {id:"c6", exp:"EXP-07-06", title:"El chatbot que prometió", place:"Web de una empresa de colectivos",
+  story:"Un pasajero pregunta al chatbot de la empresa si puede pedir un descuento por duelo después de viajar. El chatbot le dice que sí. Era falso. Cuando reclama, la empresa responde que «el chatbot es una entidad separada y no habla por nosotros».",
+  ia:"Lo dije con mucha seguridad. Eso no lo vuelve verdadero.",
+  actors:[{t:IA,s:"el chatbot"},{t:"El pasajero",s:"le creyó al chatbot"},{t:"La empresa de colectivos",s:"lo puso en su web"},{t:"El proveedor del modelo",s:"vende el modelo general"},{t:"Defensa del Consumidor",s:"recibió el reclamo"}],
+  ok:[2],
+  why:"Caso real: en 2024 un tribunal de Canadá obligó a Air Canada a cumplir lo que había prometido su chatbot. Una empresa responde por toda la información que publica en sus canales, la escriba una persona o una IA. Un chatbot no es una persona separada.",
+  norm:"UNESCO 2021 · Responsabilidad y rendición de cuentas · Derechos del consumidor"},
+ {id:"c7", exp:"EXP-07-07", title:"Becas invisibles", place:"Programa provincial de conectividad",
+  story:"Un algoritmo reparte becas de conectividad según consumo eléctrico y movimientos bancarios. Muchas familias qom y pilagá, sin medidor propio ni cuenta bancaria, quedan afuera: para el sistema «no existen». El Ministerio fijó los criterios y la consultora diseñó el modelo sin consultar a las comunidades.",
+  ia:"Asigné según los datos disponibles. Donde no hay datos, no hay persona.",
+  actors:[{t:"El Ministerio",s:"definió los criterios"},{t:"Las familias",s:"no tenían medidor ni cuenta"},{t:"La escuela",s:"pasó los listados"},{t:"La consultora",s:"diseñó el modelo"},{t:IA,s:"el algoritmo de asignación"}],
+  ok:[0,3],
+  why:"Que falten datos no es culpa de quien queda afuera. Quien diseña y quien encarga un sistema público debe asegurar que no excluya a los grupos más vulnerables y debe consultar a las comunidades afectadas. La escuela solo transmitió información.",
+  norm:"UNESCO 2021 · Equidad, inclusión y diversidad cultural · Pueblos indígenas"},
+ {id:"c8", exp:"EXP-07-08", title:"Dron sobre la escuela", place:"Escuela rural · paraje del departamento Pirané",
+  story:"Un dron fumigador autónomo rocía el lote lindero a una escuela rural. El técnico cargó un mapa viejo donde la escuela, inaugurada el año pasado, no figuraba. El productor no avisó a la escuela ni respetó la distancia mínima. Varios chicos terminan con irritación en ojos y piel.",
+  ia:"Volé exactamente la ruta del mapa. La escuela no estaba en el mapa.",
+  actors:[{t:"El fabricante del dron",s:"el equipo funcionó como se diseñó"},{t:IA,s:"el piloto automático"},{t:"El técnico",s:"cargó un mapa desactualizado"},{t:"Las docentes",s:"tenían a los chicos en el patio"},{t:"El productor",s:"no avisó ni respetó distancias"}],
+  ok:[2,4],
+  why:"La máquina cumplió lo que le cargaron. La negligencia es humana: usar un mapa viejo y no cumplir con el aviso y las distancias que exige la ley. Automatizar una tarea no elimina el deber de cuidado de quien la ordena.",
+  norm:"UNESCO 2021 · Seguridad, medio ambiente y deber de cuidado"},
+ {id:"c9", exp:"EXP-07-09", title:"Puntaje de crédito", place:"App financiera · pequeños productores",
+  story:"Una fintech niega créditos a productores algodoneros con un puntaje que nadie entiende. Cuando piden explicaciones, responde «secreto comercial». Después se sabe que usaba datos de redes sociales y de ubicación del celular, comprados a plataformas que los cedieron sin consentimiento.",
+  ia:"No sé explicar por qué. Sé que el número dio bajo.",
+  actors:[{t:"Los productores",s:"aceptaron los términos de la app"},{t:"La fintech",s:"usó datos sin consentimiento y no explica"},{t:IA,s:"el modelo de puntaje"},{t:"Las plataformas",s:"cedieron datos personales"},{t:"El banco donde cobran",s:"no participó"}],
+  ok:[1,3],
+  why:"Los datos personales necesitan consentimiento libre, expreso e informado, y cederlos también. Las personas tienen derecho a acceder a sus datos y a saber cómo se usan. Un «secreto comercial» no borra el derecho a una explicación.",
+  norm:"Ley 25.326 · Consentimiento (art. 5) · Cesión (art. 11) · Acceso (art. 14) · UNESCO 2021 · Explicabilidad"},
+ {id:"c10", exp:"EXP-07-10", title:"La app que todo lo sabía", place:"Escuela secundaria · app de «seguridad escolar»",
+  story:"La dirección contrató una app que registra ubicación, fotos y mensajes de los estudiantes, sin pedir consentimiento a las familias. La empresa dejó su servidor mal configurado y una persona descargó los datos de 800 estudiantes para venderlos.",
+  ia:"Guardé todo porque me pidieron guardarlo todo.",
+  actors:[{t:"La empresa de la app",s:"servidor sin seguridad"},{t:"Los estudiantes",s:"usaban la app"},{t:"La dirección escolar",s:"la contrató sin consentimiento"},{t:IA,s:"el sistema de monitoreo"},{t:"Quien robó los datos",s:"los descargó para venderlos"}],
+  ok:[0,2,4],
+  why:"Quien junta datos personales debe protegerlos (seguridad de los datos) y no debe juntar más de lo necesario. La dirección no pidió consentimiento a las familias y quien robó los datos cometió un delito. Los estudiantes son las víctimas.",
+  norm:"Ley 25.326 · Seguridad (art. 9) · Calidad y proporcionalidad (art. 4) · Consentimiento (art. 5)"}
+];
+const IA_IDX = c => c.actors.findIndex(a=>a.t===IA);
+
+/* =================== ESTADO =================== */
+const $ = s => document.querySelector(s);
+const stage = $("#stage");
+const COLORS = ["#27e7ff","#a066ff","#3dffa8","#ff3d6e","#ffc23d","#5c8dff","#ff7ae0","#7dffef","#c7ff4a","#ff9a3d"];
+const ss = { get(k){try{return sessionStorage.getItem(k)}catch(e){return null}}, set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}} };
+const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}} };
+function rid(n=8){const a="abcdefghijkmnpqrstuvwxyz23456789";let s="";for(let i=0;i<n;i++)s+=a[Math.floor(Math.random()*a.length)];return s}
+const S = {
+  me:{id: ss.get("jia_id") || (()=>{const x=rid(10);ss.set("jia_id",x);return x})(), nm:"", col:COLORS[Math.floor(Math.random()*COLORS.length)], j:Date.now()},
+  mode:null,         // 'solo' | 'host' | 'player'
+  code:null, net:null, h:null, players:[],
+  myAns:{}, judge:false,
+  key:null, caseT0:0, sel:new Set(), locked:false,
+  H:null,            // estado autoritativo (host/solo)
+  hostT0:0, revealT0:0, bots:[], lastScores:{}
+};
+ss.get("jia_nm") && (S.me.nm = ss.get("jia_nm"));
+
+/* =================== SONIDO (Web Audio, sin archivos) =================== */
+const SFX = (() => {
+  let ctx=null, master=null, on=true, drone=null;
+  function init(){ if(ctx) return; try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); master=ctx.createGain(); master.gain.value=.55; master.connect(ctx.destination);}catch(e){ctx=null} }
+  function tone(f,d=.12,type="sine",v=.2,slide=0,delay=0){ if(!ctx||!on) return; const t=ctx.currentTime+delay; const o=ctx.createOscillator(), g=ctx.createGain(); o.type=type; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.008); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g).connect(master); o.start(t); o.stop(t+d+.02); }
+  function noise(d=.2,v=.25,freq=1200,q=1,delay=0){ if(!ctx||!on) return; const t=ctx.currentTime+delay; const len=Math.floor(ctx.sampleRate*d); const b=ctx.createBuffer(1,len,ctx.sampleRate); const ch=b.getChannelData(0); for(let i=0;i<len;i++) ch[i]=(Math.random()*2-1)*(1-i/len); const s=ctx.createBufferSource(); s.buffer=b; const f=ctx.createBiquadFilter(); f.type="bandpass"; f.frequency.value=freq; f.Q.value=q; const g=ctx.createGain(); g.gain.value=v; s.connect(f).connect(g).connect(master); s.start(t); }
+  return {
+    init, get on(){return on},
+    toggle(){ on=!on; if(!on) this.droneOff(); return on },
+    blip(){ tone(1400,.05,"square",.05) },
+    hover(){ tone(2200,.03,"sine",.03) },
+    select(){ tone(660,.08,"triangle",.14,220) },
+    unselect(){ tone(520,.08,"triangle",.1,-180) },
+    type(){ tone(900+Math.random()*500,.025,"square",.025) },
+    tick(low){ tone(low?1500:1100,.04,"square",low?.09:.04) },
+    gavel(){ tone(110,.35,"sine",.5,-60); noise(.12,.5,400,.7); tone(70,.5,"sine",.3,-20,.02) },
+    good(){ [523,659,784,1046].forEach((f,i)=>tone(f,.22,"triangle",.16,0,i*.07)) },
+    bad(){ tone(320,.35,"sawtooth",.12,-200); noise(.25,.25,900,2,.05) },
+    glitch(){ for(let i=0;i<5;i++) noise(.04,.18,600+Math.random()*3000,6,i*.05) },
+    whoosh(){ noise(.6,.18,500,.6); tone(200,.6,"sine",.08,600) },
+    join(){ tone(880,.08,"triangle",.1); tone(1320,.12,"triangle",.1,0,.07) },
+    end(){ [392,523,659,784,1046,1318].forEach((f,i)=>tone(f,.4,"triangle",.14,0,i*.11)); noise(.8,.1,3000,.5,.6) },
+    droneOn(){ if(!ctx||!on||drone) return; const g=ctx.createGain(); g.gain.value=0; g.gain.linearRampToValueAtTime(.05,ctx.currentTime+2); const f=ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=420; const lfo=ctx.createOscillator(), lg=ctx.createGain(); lfo.frequency.value=.07; lg.gain.value=180; lfo.connect(lg).connect(f.frequency); const os=[55,55.4,82.5].map(fr=>{const o=ctx.createOscillator(); o.type="sawtooth"; o.frequency.value=fr; o.connect(f); o.start(); return o}); f.connect(g).connect(master); lfo.start(); drone={g,os,lfo} },
+    droneOff(){ if(!drone||!ctx) return; const d=drone; drone=null; d.g.gain.linearRampToValueAtTime(0,ctx.currentTime+.6); setTimeout(()=>{d.os.forEach(o=>{try{o.stop()}catch(e){}}); try{d.lfo.stop()}catch(e){}},800) }
+  };
+})();
+document.addEventListener("pointerdown", ()=>SFX.init(), {once:true});
+document.addEventListener("keydown", ()=>SFX.init(), {once:true});
+
+/* =================== FONDO: núcleo de la IA + piso de grilla =================== */
+const BG = (() => {
+  const cv=$("#bg"), cx=cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W=0,H=0,DPR=1, t=0;
+  const P=[]; for(let i=0;i<340;i++){ const u=Math.random()*2-1, th=Math.random()*Math.PI*2; P.push({x:Math.sqrt(1-u*u)*Math.cos(th), y:u, z:Math.sqrt(1-u*u)*Math.sin(th), r:Math.random()*1.4+.4, w:(Math.random()*.6+.7)}) }
+  const sparks=[];
+  const core={x:0,y:0,tx:0,ty:0,s:1,ts:1,mood:"idle",amp:0,flash:0};
+  const moods={idle:[39,231,255], speak:[160,102,255], guilty:[255,61,110], ok:[61,255,168], end:[255,194,61]};
+  let col=[39,231,255];
+  function resize(){ DPR=Math.min(2,window.devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*DPR; cv.height=H*DPR; cx.setTransform(DPR,0,0,DPR,0,0) }
+  addEventListener("resize",resize); resize();
+  function anchor(){ const a=document.querySelector("[data-core]"); if(!a) { core.tx=W*.82; core.ty=H*.22; core.ts=.55; return } const r=a.getBoundingClientRect(); core.tx=r.left+r.width/2; core.ty=r.top+r.height/2; core.ts=parseFloat(a.dataset.core)||1 }
+  function frame(){
+    t+=reduce?0.002:0.012; anchor();
+    core.x+= (core.tx-core.x)*.08; core.y+=(core.ty-core.y)*.08; core.s+=(core.ts-core.s)*.06;
+    const tc=moods[core.mood]||moods.idle; col=col.map((c,i)=>c+(tc[i]-c)*.08);
+    core.amp*=.92; core.flash*=.9;
+    cx.clearRect(0,0,W,H);
+    // piso
+    const hz=H*.62; cx.lineWidth=1;
+    for(let i=0;i<=18;i++){ const p=i/18; const y=hz+(H-hz)*Math.pow(p,2.2); cx.strokeStyle=`rgba(160,102,255,${.05+.18*p})`; cx.beginPath(); cx.moveTo(0,y); cx.lineTo(W,y); cx.stroke() }
+    const off=(t*40)%60;
+    for(let i=-20;i<=20;i++){ const x0=W/2+i*60+off-30; cx.strokeStyle="rgba(39,231,255,.07)"; cx.beginPath(); cx.moveTo(W/2+(x0-W/2)*.08,hz); cx.lineTo(x0+(x0-W/2)*1.6,H); cx.stroke() }
+    const grd=cx.createLinearGradient(0,hz-60,0,hz+10); grd.addColorStop(0,"rgba(6,5,12,0)"); grd.addColorStop(1,"rgba(160,102,255,.08)"); cx.fillStyle=grd; cx.fillRect(0,hz-60,W,70);
+    // núcleo
+    const R=Math.min(W,H)*.13*core.s*(1+core.amp*.18+Math.sin(t*2)*.02);
+    const [r,g,b]=col.map(Math.round);
+    const halo=cx.createRadialGradient(core.x,core.y,0,core.x,core.y,R*2.4); halo.addColorStop(0,`rgba(${r},${g},${b},${.32+core.flash*.5})`); halo.addColorStop(.4,`rgba(${r},${g},${b},.08)`); halo.addColorStop(1,"rgba(0,0,0,0)");
+    cx.fillStyle=halo; cx.beginPath(); cx.arc(core.x,core.y,R*2.4,0,7); cx.fill();
+    const ca=Math.cos(t*.7), sa=Math.sin(t*.7), cb=Math.cos(t*.31), sb=Math.sin(t*.31);
+    for(const p of P){ let x=p.x*ca-p.z*sa, z=p.x*sa+p.z*ca; let y=p.y*cb-z*sb; z=p.y*sb+z*cb; const wob=1+Math.sin(t*3+p.w*9)*.05*(1+core.amp*3); const k=1/(1.8-z*.6); const px=core.x+x*R*wob*k*1.3, py=core.y+y*R*wob*k*1.3; const a=.25+.75*(z+1)/2; cx.fillStyle=`rgba(${r},${g},${b},${a})`; cx.fillRect(px,py,p.r*k*1.4,p.r*k*1.4) }
+    cx.strokeStyle=`rgba(${r},${g},${b},.5)`; cx.lineWidth=1.2;
+    for(let k=0;k<3;k++){ cx.beginPath(); cx.ellipse(core.x,core.y,R*(1.25+k*.18),R*(.32+k*.05),t*(k%2?.4:-.3)+k,0,7); cx.stroke() }
+    cx.fillStyle=`rgba(255,255,255,${.75+core.amp*.25})`; cx.beginPath(); cx.arc(core.x,core.y,R*.12*(1+core.amp),0,7); cx.fill();
+    // chispas
+    for(let i=sparks.length-1;i>=0;i--){ const s=sparks[i]; s.x+=s.vx; s.y+=s.vy; s.vy+=.12; s.l-=.015; if(s.l<=0){sparks.splice(i,1);continue} cx.fillStyle=`rgba(${s.c},${s.l})`; cx.fillRect(s.x,s.y,3,3) }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  return {
+    mood(m){ core.mood=m }, pulse(v=1){ core.amp=Math.min(1.5,core.amp+v) }, flash(){ core.flash=1 },
+    burst(x,y,n=60,rgb="61,255,168"){ for(let i=0;i<n;i++){ const a=Math.random()*7, v=Math.random()*6+2; sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-3,l:1,c:rgb}) } },
+    confetti(){ const cs=["39,231,255","160,102,255","61,255,168","255,194,61","255,61,110"]; for(let i=0;i<160;i++){ sparks.push({x:Math.random()*W,y:-10-Math.random()*100,vx:(Math.random()-.5)*3,vy:Math.random()*3,l:1.4,c:cs[i%cs.length]}) } }
+  };
+})();
+
+/* =================== UTILIDADES =================== */
+function esc(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])) }
+let toastT; function toast(m,ms=3200){ const t=$("#toast"); t.textContent=m; t.classList.remove("hide"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hide"),ms) }
+function shake(){ stage.classList.remove("shake"); void stage.offsetWidth; stage.classList.add("shake") }
+function flash(color){ const d=document.createElement("div"); d.className="flash"; d.style.background=color; document.body.appendChild(d); setTimeout(()=>d.remove(),600) }
+function floaty(txt,el){ const r=(el||stage).getBoundingClientRect(); const d=document.createElement("div"); d.className="floaty"; d.textContent=txt; d.style.left=(r.left+r.width/2-30)+"px"; d.style.top=(r.top+10)+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),1500) }
+async function copy(txt){ try{ await navigator.clipboard.writeText(txt); toast("Copiado") }catch(e){ toast("No se pudo copiar: seleccionalo a mano") } }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function genCode(){ const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)]; return s }
+function caseById(id){ return CASES.find(c=>c.id===id) }
+
+/* =================== PUNTAJE =================== */
+// Cada acierto +30, cada error −20. Veredicto exacto: +40 y hasta +60 por rapidez. Mínimo 0 por caso.
+function parseAns(s){ if(typeof s!=="string") return null; const [a,b]=s.split("|"); return {sel:a?a.split(".").map(Number).filter(n=>!isNaN(n)):[], secs:Math.max(0,Math.min(CASE_SECONDS,parseFloat(b)||CASE_SECONDS))} }
+function scoreCase(c, ansStr){
+  const a=parseAns(ansStr); if(!a) return 0;
+  const ok=new Set(c.ok); let pts=0;
+  for(const i of a.sel) pts += ok.has(i)?30:-20;
+  const exact = a.sel.length===ok.size && a.sel.every(i=>ok.has(i));
+  if(exact) pts += 40 + Math.round(60*(CASE_SECONDS-a.secs)/CASE_SECONDS);
+  return Math.max(0,pts);
+}
+function revealedIds(h){ if(!h||!h.ord) return []; const n = h.ph==="end" ? h.ord.length : h.ph==="reveal" ? h.i+1 : h.i; return h.ord.slice(0,Math.max(0,n)).map(k=>CASES[k].id) }
+function totals(){ const ids=revealedIds(S.h); return S.players.map(p=>{ let s=0; for(const id of ids) s+=scoreCase(caseById(id),(p.a||{})[id]); return {...p,score:s} }).sort((a,b)=>b.score-a.score || (a.j||0)-(b.j||0)) }
+
+/* =================== TABLA DE PUNTAJES (siempre visible) =================== */
+function renderBoard(){
+  const rows=$("#rows"); const list=totals();
+  $("#boardCount").textContent = `${list.length} / ${MAX_PLAYERS}`;
+  const cid = S.h && S.h.ph==="case" && S.h.ord ? CASES[S.h.ord[S.h.i]].id : null;
+  if(!list.length){ rows.innerHTML=`<div class="empty">Todavía no hay jurados. Jugá solo, creá una sala o unite con un código.</div>`; return }
+  const before={}; rows.querySelectorAll(".row").forEach(r=>before[r.dataset.id]=r.getBoundingClientRect().top);
+  const myRank=list.findIndex(p=>p.id===S.me.id);
+  rows.innerHTML=list.map((p,i)=>{
+    const prev=S.lastScores[p.id]; const bump= prev!==undefined && prev<p.score;
+    const answered = cid && (p.a||{})[cid];
+    const mini = i>2 && i!==myRank;
+    return `<div class="row ${p.id===S.me.id?"me":""} ${i===0&&p.score>0?"lead":""} ${bump?"bump":""} ${mini?"hideMini":""}" data-id="${esc(p.id)}">
+      <span class="rk">${String(i+1).padStart(2,"0")}</span>
+      <span class="nm"><i class="dot" style="color:${esc(p.col||"#27e7ff")}"></i><span>${esc(p.nm||"Jurado")}</span>${p.id===S.me.id?"<small>VOS</small>":""}${p.bot?"<small>BOT</small>":""}</span>
+      <span class="sc">${p.score}</span>
+      <span class="st ${answered?"ok":""}" title="${cid?(answered?"Ya votó":"Pensando"):""}">${cid?(answered?"✓":"·"):""}</span>
+    </div>`}).join("");
+  list.forEach(p=>S.lastScores[p.id]=p.score);
+  rows.querySelectorAll(".row").forEach(r=>{ const b=before[r.dataset.id]; if(b===undefined) return; const d=b-r.getBoundingClientRect().top; if(Math.abs(d)<2) return; r.style.transform=`translateY(${d}px)`; r.style.transition="none"; requestAnimationFrame(()=>{ r.style.transition="transform .6s cubic-bezier(.2,.8,.2,1)"; r.style.transform="" }) });
+}
+$("#toggleBoard").onclick=()=>{ const b=$("#board"); b.classList.toggle("collapsed"); $("#toggleBoard").textContent=b.classList.contains("collapsed")?"VER TODO":"ACHICAR" };
+
+/* =================== CONECTORES =================== */
+const roomP = (window.claude && typeof window.claude.use==="function") ? window.claude.use("room").catch(()=>null) : Promise.resolve(null);
+let ROOM=null; roomP.then(r=>{ ROOM=r; updateNetChip() });
+function fbBase(){ const u=(FIREBASE_URL || ls.get("jia_fb") || "").trim().replace(/\/+$/,""); return /^https:\/\/[^/]+\.(firebaseio\.com|firebasedatabase\.app)$/.test(u)?u:"" }
+const PeerCls = () => window.Peer || (window.peerjs && window.peerjs.Peer) || null;
+const PEER_PREFIX = "juicio-ia-dia-";
+function peerOK(){ return !window.claude && !!PeerCls() && typeof RTCPeerConnection!=="undefined" }
+function transport(){ if(ROOM) return "claude"; if(fbBase()) return "firebase"; if(peerOK()) return "peer"; return null }
+const NET_NAME = {claude:"SALAS DE CLAUDE", firebase:"FIREBASE", peer:"CONEXIÓN DIRECTA"};
+function updateNetChip(){
+  const c=$("#netChip"), t=$("#netTxt"); c.classList.remove("on","warn");
+  const tr=transport();
+  if(S.net && S.mode!=="solo"){ c.classList.add("on"); t.textContent = NET_NAME[S.net.kind]+" · EN LÍNEA" }
+  else if(tr){ c.classList.add("warn"); t.textContent = "MULTIJUGADOR LISTO · "+NET_NAME[tr] }
+  else t.textContent="SIN CONECTOR · SOLO";
+  setConnChip("#cClaude", !!ROOM, ROOM?"ACTIVO":"NO DISPONIBLE AQUÍ");
+  setConnChip("#cFb", !!fbBase(), fbBase()?"CONFIGURADO":"SIN CONFIGURAR");
+  setConnChip("#cPeer", peerOK(), peerOK()?"LISTA":(window.claude?"NO DISPONIBLE DENTRO DE CLAUDE":"NO DISPONIBLE"));
+}
+function setConnChip(sel,ok,txt){ const c=$(sel); c.classList.toggle("on",ok); c.querySelector("span").textContent=txt }
+
+// Conector 1: salas de Claude (presencia compartida por sala con nombre)
+async function netClaude(code){
+  const r = await ROOM.join("juicio-"+code.toLowerCase());
+  let cb=()=>{};
+  const read=()=>{ let h=null; const pl=[]; for(const x of r.peers()){ const pr=x.presence||{}; if(pr.h && typeof pr.h==="object" && !h) h=pr.h; if(pr.p && typeof pr.p==="object" && pr.p.id) pl.push(pr.p) } cb({h,players:pl}) };
+  return { kind:"claude",
+    setHost(h){ r.presence({h}).catch(()=>{}) },
+    setMe(p){ r.presence({p}).catch(e=>e&&e.code==="invalid_argument"&&toast("Tus datos superan el límite de la sala")) },
+    clearMe(){ r.presence({p:null}).catch(()=>{}) },
+    onState(f){ cb=f; r.onPeers(read, e=>toast("Se perdió la conexión con la sala ("+e.code+")")); read() },
+    close(){ r.leave().catch(()=>{}) }
+  };
+}
+// Conector 2: Firebase Realtime Database por REST + streaming (sin SDK)
+function netFirebase(code){
+  const root=`${fbBase()}/juicio/${code}`; let tree={}, es=null, cb=()=>{};
+  const emit=()=>{ const h=(tree&&tree.h)||null; const pl=Object.values((tree&&tree.p)||{}).filter(x=>x&&x.id); cb({h,players:pl}) };
+  function apply(path,data,merge){
+    const parts=path.split("/").filter(Boolean);
+    if(!parts.length){ if(merge){ tree=tree||{}; for(const k in data){ if(data[k]===null) delete tree[k]; else tree[k]=data[k] } } else tree=data||{}; return }
+    tree=tree||{}; let o=tree;
+    for(let i=0;i<parts.length-1;i++){ if(!o[parts[i]]||typeof o[parts[i]]!=="object") o[parts[i]]={}; o=o[parts[i]] }
+    const last=parts[parts.length-1];
+    if(merge){ o[last]=(o[last]&&typeof o[last]==="object")?o[last]:{}; for(const k in data){ if(data[k]===null) delete o[last][k]; else o[last][k]=data[k] } }
+    else { if(data===null) delete o[last]; else o[last]=data }
+  }
+  const put=(p,v)=>fetch(`${root}${p}.json`,{method:"PUT",body:JSON.stringify(v)}).catch(()=>toast("No se pudo escribir en Firebase"));
+  return { kind:"firebase",
+    async hasHost(){ try{ const r=await fetch(`${root}/h.json`); return (await r.json())!=null }catch(e){ return false } },
+    setHost(h){ put("/h",h) },
+    setMe(p){ put("/p/"+p.id,p) },
+    clearMe(){ fetch(`${root}/p/${S.me.id}.json`,{method:"DELETE",keepalive:true}).catch(()=>{}) },
+    wipe(){ fetch(`${root}.json`,{method:"DELETE"}).catch(()=>{}) },
+    onState(f){ cb=f; es=new EventSource(`${root}.json`);
+      es.addEventListener("put",e=>{ const d=JSON.parse(e.data); apply(d.path,d.data,false); emit() });
+      es.addEventListener("patch",e=>{ const d=JSON.parse(e.data); apply(d.path,d.data,true); emit() });
+      es.addEventListener("cancel",()=>toast("Firebase rechazó la lectura: revisá las reglas"));
+      es.onerror=()=>{ $("#netChip").classList.add("warn") };
+      es.onopen=()=>{ $("#netChip").classList.remove("warn") };
+    },
+    close(){ es&&es.close() }
+  };
+}
+// Conector 3: conexión directa con PeerJS (WebRTC). El navegador del juez es el servidor.
+const PEER_OPTS = {debug:0};
+function netPeerHost(code){
+  return new Promise((res,rej)=>{
+    const peer=new (PeerCls())(PEER_PREFIX+code, PEER_OPTS);
+    let cb=()=>{}, h=null, opened=false, q=false; const pl={}; const conns=new Set();
+    const state=()=>({h,players:Object.values(pl)});
+    const bcast=()=>{ if(q) return; q=true; queueMicrotask(()=>{ q=false; const st=state(); cb(st); for(const c of conns){ if(c.open){ try{ c.send({t:"s",s:st}) }catch(e){} } } }) };
+    const api={ kind:"peer",
+      setHost(x){ h=x; bcast() }, setMe(p){ pl[p.id]=p; bcast() }, clearMe(){ delete pl[S.me.id]; bcast() },
+      onState(f){ cb=f; bcast() }, close(){ try{ peer.destroy() }catch(e){} } };
+    peer.on("open",()=>{ opened=true; res(api) });
+    peer.on("disconnected",()=>{ if(!peer.destroyed) setTimeout(()=>{ try{ peer.reconnect() }catch(e){} },1000) });
+    peer.on("error",e=>{ if(!opened) rej(e); else if(e.type!=="peer-unavailable") toast("Conexión directa: "+e.type) });
+    peer.on("connection",c=>{
+      c.on("open",()=>{ conns.add(c); try{ c.send({t:"s",s:state()}) }catch(e){} });
+      c.on("data",d=>{
+        if(!d||typeof d!=="object") return;
+        if(d.t==="p" && d.p && typeof d.p.id==="string"){
+          const nuevo=!pl[d.p.id]; const jug=Object.values(pl).filter(p=>!(S.judge&&p.id===S.me.id)).length;
+          if(nuevo && jug>=MAX_PLAYERS){ try{ c.send({t:"full"}) }catch(e){} setTimeout(()=>c.close(),400); return }
+          c._pid=d.p.id; pl[d.p.id]={id:String(d.p.id).slice(0,24), nm:String(d.p.nm||"Jurado").slice(0,18), col:String(d.p.col||"#27e7ff").slice(0,9), j:+d.p.j||Date.now(), a:(d.p.a&&typeof d.p.a==="object")?d.p.a:{}}; bcast();
+        }
+        if(d.t==="bye" && c._pid){ delete pl[c._pid]; bcast() }
+      });
+      c.on("close",()=>{ conns.delete(c) });
+    });
+    setTimeout(()=>{ if(!opened){ rej(new Error("sin respuesta del servidor de conexión")); try{ peer.destroy() }catch(e){} } },12000);
+  });
+}
+function netPeerJoin(code){
+  return new Promise((res,rej)=>{
+    const peer=new (PeerCls())(PEER_OPTS);
+    let cb=()=>{}, conn=null, last=null, me=null, ok=false;
+    const api={ kind:"peer",
+      setHost(){}, setMe(p){ me=p; if(conn&&conn.open) try{ conn.send({t:"p",p}) }catch(e){} },
+      clearMe(){ if(conn&&conn.open) try{ conn.send({t:"bye"}) }catch(e){} },
+      onState(f){ cb=f; if(last) f(last) }, close(){ try{ peer.destroy() }catch(e){} } };
+    const connect=()=>{
+      conn=peer.connect(PEER_PREFIX+code,{reliable:true,serialization:"json"});
+      conn.on("open",()=>{ if(!ok){ ok=true; res(api) } if(me) try{ conn.send({t:"p",p:me}) }catch(e){} });
+      conn.on("data",d=>{ if(d&&d.t==="s"){ last=d.s; cb(d.s) } if(d&&d.t==="full"){ toast("La sala está llena (40 jurados)"); leave() } });
+      conn.on("close",()=>{ if(S.net===api && S.mode==="player"){ toast("Se cortó la conexión con el juez. Reintentando…"); setTimeout(()=>{ if(S.net===api && !peer.destroyed) connect() },2000) } });
+    };
+    peer.on("open",connect);
+    peer.on("disconnected",()=>{ if(!peer.destroyed) setTimeout(()=>{ try{ peer.reconnect() }catch(e){} },1000) });
+    peer.on("error",e=>{ if(!ok){ rej(new Error(e.type==="peer-unavailable"?"no existe esa sala o el juez cerró la pestaña":e.type)); try{ peer.destroy() }catch(x){} } });
+    setTimeout(()=>{ if(!ok){ rej(new Error("la sala no respondió")); try{ peer.destroy() }catch(e){} } },12000);
+  });
+}
+// Conector local (modo solo, con jurados sintéticos)
+function netLocal(){
+  let cb=()=>{}, h=null; const pl={};
+  const emit=()=>setTimeout(()=>cb({h,players:Object.values(pl)}),0);
+  return { kind:"local", setHost(x){h=x;emit()}, setMe(p){pl[p.id]=p;emit()}, clearMe(){}, onState(f){cb=f;emit()}, close(){} , _pl:pl };
+}
+
+/* panel de conectores */
+$("#btnConn").onclick=()=>{ $("#fbUrl").value=FIREBASE_URL||ls.get("jia_fb")||""; updateNetChip(); $("#connPanel").hidden=false; SFX.blip() };
+$("#closeConn").onclick=()=>{ $("#connPanel").hidden=true };
+$("#connPanel").addEventListener("click",e=>{ if(e.target.id==="connPanel") $("#connPanel").hidden=true });
+$("#copyRules").onclick=()=>copy($("#rulesTxt").textContent);
+$("#fbSave").onclick=async()=>{
+  const u=$("#fbUrl").value.trim().replace(/\/+$/,""); const m=$("#fbMsg");
+  if(!/^https:\/\/[^/]+\.(firebaseio\.com|firebasedatabase\.app)$/.test(u)){ m.style.color="var(--red)"; m.textContent="La URL tiene que empezar con https:// y terminar en firebaseio.com o firebasedatabase.app."; return }
+  ls.set("jia_fb",u); m.style.color="var(--dim)"; m.textContent="Probando…";
+  try{ const r=await fetch(`${u}/juicio/_prueba.json`,{method:"PUT",body:JSON.stringify(Date.now())}); if(!r.ok) throw new Error(r.status); fetch(`${u}/juicio/_prueba.json`,{method:"DELETE"}); m.style.color="var(--green)"; m.textContent="Conexión correcta. Ya podés crear salas con Firebase."; SFX.good() }
+  catch(e){ m.style.color="var(--red)"; m.textContent = "No respondió ("+e.message+"). Revisá la URL y las reglas. Dentro de claude.ai Firebase está bloqueado: probalo desde el archivo descargado o desde GitHub Pages." }
+  updateNetChip();
+};
+$("#btnSound").onclick=()=>{ SFX.init(); const on=SFX.toggle(); $("#btnSound").textContent="SONIDO: "+(on?"ON":"OFF"); $("#btnSound").setAttribute("aria-pressed",on); if(on&&S.mode&&S.h&&S.h.ph!=="lobby") SFX.droneOn() };
+
+/* =================== FLUJO =================== */
+function myP(){ return {id:S.me.id, nm:S.me.nm, col:S.me.col, j:S.me.j, a:S.myAns} }
+function pushMe(){ if(S.net && !S.judge) S.net.setMe(myP()) }
+function saveAns(){ if(S.code) ss.set("jia_ans_"+S.code, JSON.stringify({n:S.gameN||0,a:S.myAns})) }
+function loadAns(){ try{ const o=JSON.parse(ss.get("jia_ans_"+S.code)||"{}")||{}; return {n:o.n||0,a:o.a||{}} }catch(e){ return {n:0,a:{}} } }
+
+function setCodeChip(){ $("#codeChip").hidden=!S.code || S.mode==="solo"; $("#codeChipTxt").textContent=S.code||"" }
+
+function readNick(){ const v=($("#nick")?.value||"").trim().slice(0,18); if(!v){ toast("Escribí tu nombre de jurado"); $("#nick")?.focus(); shake(); SFX.bad(); return null } S.me.nm=v; ss.set("jia_nm",v); return v }
+
+async function startSolo(){
+  if(!readNick()) return; SFX.whoosh();
+  S.mode="solo"; S.code="SOLO"+rid(4); S.myAns={}; S.gameN=undefined; S.judge=false; S.lastScores={};
+  const n=netLocal(); S.net=n;
+  S.bots=[{id:"bot1",nm:"JURADO-7",col:"#ff7ae0",acc:.55,bot:true},{id:"bot2",nm:"NODO-Ω",col:"#c7ff4a",acc:.4,bot:true},{id:"bot3",nm:"ÁRBITRO-K",col:"#ffc23d",acc:.7,bot:true}];
+  S.bots.forEach(b=>n.setMe({id:b.id,nm:b.nm,col:b.col,j:1,a:{},bot:true}));
+  n.onState(onState); pushMe();
+  S.H={ph:"lobby",n:0}; hostStart();
+}
+async function createRoom(){
+  if(!readNick()) return;
+  const tr=transport(); if(!tr){ toast("Configurá un conector para jugar en red. Mientras, podés jugar solo."); $("#btnConn").click(); return }
+  SFX.whoosh(); S.mode="host"; S.myAns={}; S.gameN=undefined; S.lastScores={}; S.judge=false;
+  try{
+    let code=genCode();
+    if(tr==="claude"){ S.net=await netClaude(code) }
+    else if(tr==="peer"){ renderWaiting("Abriendo la sala…"); for(let k=0;;k++){ try{ S.net=await netPeerHost(code); break }catch(e){ if(e&&e.type==="unavailable-id"&&k<5){ code=genCode(); continue } throw e } } }
+    else { S.net=netFirebase(code); for(let k=0;k<5 && await S.net.hasHost();k++){ code=genCode(); S.net=netFirebase(code) } }
+    S.code=code;
+  }catch(e){ toast("No se pudo abrir la sala: "+(e.code||e.type||e.message)); S.mode=null; S.net=null; renderIntro(); return }
+  S.H={ph:"lobby",n:0,code:S.code}; S.net.setHost(S.H); S.net.onState(onState); pushMe();
+  setCodeChip(); updateNetChip(); renderLobby();
+}
+async function joinRoom(){
+  if(!readNick()) return;
+  const code=($("#codeIn").value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(code.length<4){ toast("El código tiene 4 caracteres"); shake(); SFX.bad(); return }
+  const tr=transport(); if(!tr){ toast("Este dispositivo no tiene conector. Abrí el juego desde el mismo enlace que quien creó la sala."); return }
+  S.mode="player"; S.code=code; S.myAns={}; S.gameN=undefined; S.lastScores={}; S.judge=false;
+  renderWaiting("Buscando la sala "+code+"…");
+  try{ S.net = tr==="claude" ? await netClaude(code) : tr==="peer" ? await netPeerJoin(code) : netFirebase(code) }catch(e){ toast("No se pudo entrar: "+(e.code||e.message)); S.mode=null; S.net=null; renderIntro(); return }
+  let found=false;
+  S.net.onState(st=>{
+    if(!found){
+      if(!st.h){ return }
+      const others=st.players.filter(p=>p.id!==S.me.id);
+      if(others.length>=MAX_PLAYERS){ toast("La sala está llena (40 jurados)"); leave(); return }
+      found=true; SFX.join(); pushMe(); setCodeChip(); updateNetChip();
+    }
+    onState(st);
+  });
+  setTimeout(()=>{ if(!found && S.net && S.mode==="player" && S.code===code){ toast("No encontramos la sala "+code+". Revisá el código."); leave() } },7000);
+}
+function leave(){
+  try{ if(S.net){ S.net.clearMe&&S.net.clearMe(); if(S.mode==="host"&&S.net.wipe&&S.H&&S.H.ph==="end") S.net.wipe(); S.net.close() } }catch(e){}
+  S.net=null; S.mode=null; S.code=null; S.h=null; S.H=null; S.players=[]; S.key=null; S.myAns={}; S.bots=[];
+  clearInterval(hostTimer); hostTimer=null; stopCaseTimer(); SFX.droneOff();
+  setCodeChip(); updateNetChip(); renderBoard(); renderIntro();
+}
+addEventListener("pagehide",()=>{ if(S.net&&(S.net.kind==="firebase"||(S.net.kind==="peer"&&S.mode==="player"))) S.net.clearMe() });
+addEventListener("beforeunload",e=>{ if(S.mode==="host"&&S.net&&S.net.kind==="peer"&&S.H&&S.H.ph!=="end"){ e.preventDefault(); e.returnValue="" } });
+
+/* =================== MOTOR DEL JUEZ (host / solo) =================== */
+let hostTimer=null;
+function hostSet(patch){ S.H={...S.H,...patch}; S.net.setHost(S.H) }
+function hostStart(){
+  const ord=shuffle(CASES.map((_,i)=>i));
+  S.hostT0=performance.now();
+  if(S.mode==="solo") S.bots.forEach(b=>{ b.plan={}; ord.forEach(k=>b.plan[CASES[k].id]=6+Math.random()*28) });
+  hostSet({ph:"case",i:0,ord,n:(S.H.n||0)+1,code:S.code,judge:S.judge});
+  clearInterval(hostTimer); hostTimer=setInterval(hostTick,250);
+}
+function hostTick(){
+  const h=S.H; if(!h||!h.ord) return;
+  const now=performance.now();
+  if(h.ph==="case"){
+    const c=CASES[h.ord[h.i]], el=(now-S.hostT0)/1000;
+    if(S.mode==="solo") botsAct(c,el);
+    const voters=S.players.filter(p=>!p.bot || S.mode==="solo");
+    const all = voters.length>0 && voters.every(p=>(p.a||{})[c.id]);
+    if(el>=CASE_SECONDS+.6 || (all && el>1.5)){ hostSet({ph:"reveal"}); S.revealT0=now }
+  } else if(h.ph==="reveal"){
+    const left=REVEAL_SECONDS-(now-S.revealT0)/1000;
+    const b=$("#autoNext"); if(b) b.textContent=Math.max(0,Math.ceil(left));
+    if(left<=0) hostNext();
+  }
+}
+function hostNext(){
+  const h=S.H; if(h.ph!=="reveal") return;
+  if(h.i+1>=h.ord.length){ hostSet({ph:"end"}); clearInterval(hostTimer); hostTimer=null; return }
+  S.hostT0=performance.now(); hostSet({ph:"case",i:h.i+1});
+}
+function botsAct(c,el){
+  for(const b of S.bots){
+    const p=S.net._pl[b.id]; if(!p || p.a[c.id] || el<b.plan[c.id]) continue;
+    let sel;
+    if(Math.random()<b.acc) sel=c.ok.slice();
+    else { const s=new Set(c.ok.filter(()=>Math.random()<.65)); c.actors.forEach((_,i)=>{ if(!c.ok.includes(i)&&Math.random()<.3) s.add(i) }); sel=[...s] }
+    const a={...p.a,[c.id]:sel.sort().join(".")+"|"+el.toFixed(1)}; S.net.setMe({...p,a});
+  }
+}
+
+/* =================== RECEPCIÓN DE ESTADO =================== */
+function onState(st){
+  const seen=new Map(); for(const p of st.players){ if(!p||!p.id) continue; const o=seen.get(p.id); if(!o||Object.keys(p.a||{}).length>=Object.keys(o.a||{}).length) seen.set(p.id,p) }
+  const prevCount=S.players.length;
+  S.players=[...seen.values()].sort((a,b)=>(a.j||0)-(b.j||0)).slice(0,MAX_PLAYERS);
+  if(S.mode!=="solo" && S.players.length>prevCount && S.h && S.h.ph==="lobby") SFX.join();
+  S.h = st.h || S.h;
+  renderBoard();
+  if(!S.h) return;
+  const h=S.h;
+  if(h.n && h.n!==S.gameN){ const st0=loadAns(); S.myAns=(S.gameN===undefined && st0.n===h.n)?st0.a:{}; S.gameN=h.n; S.lastScores={}; saveAns(); pushMe(); }
+  if(h.ph==="lobby"){ if(S.key!=="lobby"){ S.key="lobby"; S.mode==="host"?renderLobby():renderWaiting("Esperando que el juez inicie el juicio…") } else updateLobby(); return }
+  const key=h.n+"-"+h.ph+"-"+h.i;
+  if(h.ph==="case"){ if(S.key!==key){ S.key=key; enterCase(h) } else updateCaseStatus(); }
+  else if(h.ph==="reveal"){ if(S.key!==key){ S.key=key; enterReveal(h,true) } else enterReveal(h,false) }
+  else if(h.ph==="end"){ if(S.key!==key){ S.key=key; enterEnd() } else updateEnd() }
+}
+
+/* =================== PANTALLAS =================== */
+function renderIntro(){
+  BG.mood("idle");
+  const hasNet=!!transport();
+  stage.innerHTML=`<section class="screen hero">
+    <div class="kicker">ISFD y T «RFA» · Ética e Inteligencia Artificial · Clase 7 — Casos y simulaciones</div>
+    <h1 class="glitch" data-t="JUICIO A LA IA">JUICIO A LA IA</h1>
+    <div id="coreAnchorIntro" data-core="1.15" aria-hidden="true"></div>
+    <p class="lede">La IA está en el banquillo por diez daños reales. Vos sos jurado: en cada expediente tenés <em>${CASE_SECONDS} segundos</em> para señalar a <em>todos</em> los responsables.</p>
+    <div class="panel stack">
+      <div class="field"><label for="nick">Tu nombre de jurado</label><input class="inp" id="nick" maxlength="18" autocomplete="off" placeholder="Ej.: Mica, 2.º año" value="${esc(S.me.nm)}"></div>
+      <div class="actions">
+        <button class="btn" id="bSolo" type="button">Jugar solo</button>
+        <button class="btn v" id="bCreate" type="button" ${hasNet?"":"title='Necesita un conector'"}>Crear sala</button>
+      </div>
+      <div class="field"><label for="codeIn">¿Te pasaron un código?</label>
+        <div class="join"><input class="inp code" id="codeIn" maxlength="4" autocomplete="off" placeholder="A7KX"><button class="btn g" id="bJoin" type="button">Unirme</button></div>
+      </div>
+      ${hasNet?"":`<p class="status" style="margin:0">Para jugar en red abrí <b>CONECTORES</b> (arriba a la derecha).</p>`}
+    </div>
+    <div class="rules">
+      <div class="rule"><b>+30</b>por cada responsable bien señalado</div>
+      <div class="rule"><b>−20</b>por cada acusación equivocada</div>
+      <div class="rule"><b>+40 … +100</b>veredicto exacto, más rápido suma más</div>
+    </div>
+  </section>`;
+  $("#bSolo").onclick=startSolo; $("#bCreate").onclick=createRoom; $("#bJoin").onclick=joinRoom;
+  $("#codeIn").addEventListener("keydown",e=>{ if(e.key==="Enter") joinRoom() });
+  $("#nick").addEventListener("keydown",e=>{ if(e.key==="Enter") startSolo() });
+  stage.querySelectorAll(".btn").forEach(b=>b.addEventListener("pointerenter",()=>SFX.hover()));
+}
+function renderWaiting(msg){
+  BG.mood("idle");
+  stage.innerHTML=`<section class="screen stack">
+    <div class="kicker">SALA ${esc(S.code||"")}</div>
+    <h2 class="glitch" data-t="SALA DE ESPERA" style="font-size:clamp(30px,6vw,52px);margin:0;color:#fff">SALA DE ESPERA</h2>
+    <div data-core=".8" style="height:150px" aria-hidden="true"></div>
+    <div class="panel stack"><p class="status" id="waitMsg" style="margin:0;font-size:14px">${esc(msg)}</p>
+      <div class="jurors" id="jurors"></div>
+      <div><button class="btn ghost" id="bLeave" type="button">Salir</button></div></div>
+  </section>`;
+  $("#bLeave").onclick=leave; updateLobby();
+}
+function renderLobby(){
+  BG.mood("idle");
+  const tr=S.net&&S.net.kind;
+  stage.innerHTML=`<section class="screen stack">
+    <div class="kicker">SALA CREADA · ${NET_NAME[tr]||""}</div>
+    <div class="bigcode"><span class="code" id="bigCode">${esc(S.code)}</span><button class="ibtn" id="cpCode" type="button">COPIAR CÓDIGO</button><div data-core=".5" style="width:120px;height:90px;margin-left:auto" aria-hidden="true"></div></div>
+    <p class="lede" style="font-size:16px">Pasale este código a tu curso. Entran desde «¿Te pasaron un código?». Hasta ${MAX_PLAYERS} jurados.</p>
+    <div class="panel stack">
+      <div class="jurors" id="jurors"></div>
+      <label class="check"><input type="checkbox" id="judgeChk"> Solo proyectar la partida (yo no juego)</label>
+      <div class="actions"><button class="btn v" id="bStart" type="button">Iniciar juicio</button><button class="btn ghost" id="bLeave" type="button">Cerrar sala</button></div>
+    </div>
+  </section>`;
+  $("#cpCode").onclick=()=>copy(S.code);
+  $("#judgeChk").checked=S.judge;
+  $("#judgeChk").onchange=e=>{ S.judge=e.target.checked; if(S.judge){ S.net.clearMe&&S.net.clearMe() } else pushMe() };
+  $("#bStart").onclick=()=>{ if(!S.judge && !S.players.some(p=>p.id===S.me.id)) pushMe(); if(S.players.filter(p=>p.id!==S.me.id).length===0 && S.judge){ toast("Esperá al menos un jurado"); return } SFX.gavel(); hostStart() };
+  $("#bLeave").onclick=leave;
+  updateLobby();
+}
+function updateLobby(){
+  const j=$("#jurors"); if(!j) return;
+  j.innerHTML = S.players.length ? S.players.map(p=>`<div class="juror"><i class="dot" style="color:${esc(p.col)}"></i><span>${esc(p.nm)}${p.id===S.me.id?" (vos)":""}</span></div>`).join("") : `<div class="empty" style="grid-column:1/-1">Esperando jurados…</div>`;
+  const w=$("#waitMsg"); if(w && S.h) w.textContent="Esperando que el juez inicie el juicio… ("+S.players.length+" jurados en la sala)";
+}
+
+/* ---- expediente ---- */
+let caseRAF=null, typeT=null, lastSec=null;
+function stopCaseTimer(){ cancelAnimationFrame(caseRAF); caseRAF=null; clearInterval(typeT) }
+function enterCase(h){
+  stopCaseTimer();
+  const c=CASES[h.ord[h.i]];
+  S.sel=new Set(); S.locked=!!S.myAns[c.id] || S.judge; S.caseT0=performance.now(); lastSec=null;
+  if(h.i===0) SFX.droneOn();
+  SFX.gavel(); BG.mood("speak"); BG.pulse(1); flash("rgba(160,102,255,.25)");
+  const total=h.ord.length, C=2*Math.PI*34;
+  stage.innerHTML=`<section class="screen">
+    <div class="casehead">
+      <div style="min-width:0">
+        <div class="expno">EXPEDIENTE ${String(h.i+1).padStart(2,"0")}/${total} · ${c.exp}</div>
+        <h2 class="glitch" data-t="${esc(c.title)}">${esc(c.title)}</h2>
+        <div class="place">⌖ ${esc(c.place)}</div>
+      </div>
+      <div class="timer" id="timer" data-core=".42"><svg viewBox="0 0 78 78"><circle class="trk" cx="39" cy="39" r="34"/><circle class="bar" id="tbar" cx="39" cy="39" r="34" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="num" id="tnum">${CASE_SECONDS}</div></div>
+    </div>
+    <p class="story">${esc(c.story)}</p>
+    <div class="ia"><span class="tag">LA IA DECLARA</span><p id="iaSay"><span class="cur"></span></p></div>
+    <div class="ask">¿Quiénes son responsables?<small>Marcá todos los que correspondan. Si te equivocás, resta.</small></div>
+    <div class="actors" id="actors">${c.actors.map((a,i)=>`<button type="button" class="actor" data-i="${i}" aria-pressed="false">${esc(a.t)}<small>${esc(a.s)}</small></button>`).join("")}</div>
+    <div class="casefoot" id="cfoot"></div>
+  </section>`;
+  typeIA(c.ia);
+  stage.querySelectorAll(".actor").forEach(b=>{
+    b.addEventListener("pointerenter",()=>{ if(!S.locked) SFX.hover() });
+    b.onclick=()=>{ if(S.locked) return; const i=+b.dataset.i; if(S.sel.has(i)){S.sel.delete(i);SFX.unselect()}else{S.sel.add(i);SFX.select()} b.classList.toggle("sel",S.sel.has(i)); b.setAttribute("aria-pressed",S.sel.has(i)); renderCaseFoot() };
+  });
+  if(S.myAns[c.id]){ const a=parseAns(S.myAns[c.id]); a.sel.forEach(i=>S.sel.add(i)); stage.querySelectorAll(".actor").forEach(b=>{ b.classList.toggle("sel",S.sel.has(+b.dataset.i)); b.disabled=true }) }
+  if(S.judge) stage.querySelectorAll(".actor").forEach(b=>b.disabled=true);
+  renderCaseFoot();
+  const loop=()=>{
+    const el=(performance.now()-S.caseT0)/1000, left=Math.max(0,CASE_SECONDS-el);
+    const bar=$("#tbar"), num=$("#tnum"), tm=$("#timer"); if(!bar) return;
+    bar.setAttribute("stroke-dashoffset", (C*(1-left/CASE_SECONDS)).toFixed(1));
+    const sec=Math.ceil(left); num.textContent=sec; const tmn=$("#tmini"); if(tmn){ tmn.textContent=sec; tmn.classList.toggle("low",sec<=5) }
+    if(sec!==lastSec){ lastSec=sec; if(sec<=10&&sec>0){ SFX.tick(sec<=5); if(sec<=5 && !S.locked){ tm.classList.add("low"); shake() } } }
+    if(left<=0){ if(!S.locked) submit(true); return }
+    caseRAF=requestAnimationFrame(loop);
+  };
+  caseRAF=requestAnimationFrame(loop);
+}
+function typeIA(txt){
+  const p=$("#iaSay"); let i=0; clearInterval(typeT);
+  typeT=setInterval(()=>{ if(!p.isConnected){clearInterval(typeT);return} i++; p.innerHTML=esc(txt.slice(0,i))+'<span class="cur"></span>'; if(i%3===0){SFX.type(); BG.pulse(.25)} if(i>=txt.length){ clearInterval(typeT); setTimeout(()=>BG.mood("idle"),400) } },28);
+}
+function renderCaseFoot(){
+  const f=$("#cfoot"); if(!f) return; const h=S.h; const c=CASES[h.ord[h.i]];
+  const voted=S.players.filter(p=>(p.a||{})[c.id]).length;
+  if(S.judge){ f.innerHTML=`<span class="locked">MODO JUEZ · PROYECTANDO</span><span class="status">${voted}/${S.players.length} jurados votaron</span>`+hostSkip(); bindSkip(); return }
+  const tm=`<span class="tmini" id="tmini">${lastSec??CASE_SECONDS}</span>`;
+  if(S.locked) f.innerHTML=tm+`<span class="locked">✓ VEREDICTO ENVIADO · ESPERANDO AL RESTO</span><span class="status" id="vstat">${voted}/${S.players.length} jurados votaron</span>`+hostSkip();
+  else f.innerHTML=tm+`<button class="btn g" id="bSubmit" type="button" ${S.sel.size?"":"disabled"}>Dictar veredicto (${S.sel.size})</button><span class="status" id="vstat">${voted}/${S.players.length} jurados votaron</span>`+hostSkip();
+  const b=$("#bSubmit"); if(b) b.onclick=()=>submit(false);
+  bindSkip();
+}
+function hostSkip(){ return (S.mode==="host")?`<button class="ibtn" id="bSkip" type="button">CERRAR VOTACIÓN</button>`:"" }
+function bindSkip(){ const b=$("#bSkip"); if(b) b.onclick=()=>{ if(S.H&&S.H.ph==="case"){ hostSet({ph:"reveal"}); S.revealT0=performance.now() } } }
+function updateCaseStatus(){ if(S.locked||S.judge) renderCaseFoot(); else { const s=$("#vstat"); if(s){ const c=CASES[S.h.ord[S.h.i]]; s.textContent=`${S.players.filter(p=>(p.a||{})[c.id]).length}/${S.players.length} jurados votaron` } } }
+function submit(timeout){
+  if(S.locked||S.judge) return; const h=S.h; const c=CASES[h.ord[h.i]];
+  const secs=Math.min(CASE_SECONDS,(performance.now()-S.caseT0)/1000);
+  S.locked=true; S.myAns={...S.myAns,[c.id]:[...S.sel].sort((a,b)=>a-b).join(".")+"|"+secs.toFixed(1)};
+  saveAns(); pushMe();
+  stage.querySelectorAll(".actor").forEach(b=>b.disabled=true);
+  if(timeout){ SFX.glitch(); toast(S.sel.size?"Tiempo. Se envió lo que marcaste.":"Tiempo. Sin veredicto: 0 puntos.") } else { SFX.gavel(); BG.pulse(1) }
+  $("#timer")&&$("#timer").classList.remove("low");
+  renderCaseFoot();
+}
+
+/* ---- sentencia ---- */
+function enterReveal(h,first){
+  const c=CASES[h.ord[h.i]];
+  if(first){ stopCaseTimer(); if(!S.locked && !S.judge) submit(true) }
+  const ok=new Set(c.ok); const voters=S.players.filter(p=>(p.a||{})[c.id]);
+  const counts=c.actors.map((_,i)=>voters.filter(p=>parseAns(p.a[c.id]).sel.includes(i)).length);
+  const mine=S.myAns[c.id]?parseAns(S.myAns[c.id]).sel:[]; const pts=S.judge?null:scoreCase(c,S.myAns[c.id]);
+  const iaPick = voters.length? Math.round(100*counts[IA_IDX(c)]/voters.length):0;
+  const rows=c.actors.map((a,i)=>{ const pct=voters.length?Math.round(100*counts[i]/voters.length):0; const mineHit=mine.includes(i);
+    return `<div class="vrow ${ok.has(i)?"ok":"no"}"><span class="ico">${ok.has(i)?"✔":"—"}</span><span class="nm">${esc(a.t)}${mineHit?`<em class="${ok.has(i)?"":"bad"}">TU VOTO</em>`:""}</span><span><div class="pbar"><b style="width:${first?0:pct}%" data-w="${pct}"></b></div><div class="pct">${pct}% · ${counts[i]}</div></span></div>` }).join("");
+  if(!first){ const v=$("#verdicts"); if(v){ v.innerHTML=rows; v.querySelectorAll(".pbar b").forEach(b=>b.style.width=b.dataset.w+"%") } return }
+  const exact = mine.length===ok.size && mine.every(i=>ok.has(i));
+  stage.innerHTML=`<section class="screen">
+    <div class="casehead"><div style="min-width:0"><div class="expno">SENTENCIA · ${c.exp}</div><h2>${esc(c.title)}</h2></div><div data-core=".4" style="width:78px;height:78px"></div></div>
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:8px">
+      <span class="stamp anim">LA IA: INIMPUTABLE</span>
+      ${pts===null?"":`<span class="gain ${pts?"":"zero"}" id="gain">+${pts}</span><span class="status">${exact?"Veredicto exacto":"Veredicto parcial"}</span>`}
+    </div>
+    <div class="verdicts" id="verdicts">${rows}</div>
+    <div class="why"><p>${esc(c.why)}</p><div class="norm">${esc(c.norm)}</div>
+      ${iaPick>0?`<p class="status">${iaPick}% del jurado culpó a la IA misma. Una IA no tiene libertad ni puede rendir cuentas: responden las personas e instituciones que la crean, la venden y la usan.</p>`:""}
+    </div>
+    <div class="casefoot">${S.mode!=="player"?`<button class="btn v" id="bNext" type="button">${h.i+1>=h.ord.length?"Ver el fallo final":"Siguiente expediente"} · <span id="autoNext">${REVEAL_SECONDS}</span></button>`:`<span class="status">El juez pasa al siguiente expediente…</span>`}</div>
+  </section>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>stage.querySelectorAll(".pbar b").forEach(b=>b.style.width=b.dataset.w+"%")));
+  const nb=$("#bNext"); if(nb) nb.onclick=()=>{ SFX.blip(); hostNext() };
+  SFX.gavel();
+  setTimeout(()=>{ if(pts===null){ BG.mood("guilty"); return }
+    if(exact){ SFX.good(); BG.mood("ok"); BG.flash(); const g=$("#gain"); if(g){ const r=g.getBoundingClientRect(); BG.burst(r.left+r.width/2,r.top+r.height/2,70) } floaty("+"+pts,$("#gain")) }
+    else if(pts>0){ SFX.select(); BG.mood("ok"); floaty("+"+pts,$("#gain")) }
+    else { SFX.bad(); BG.mood("guilty"); flash("rgba(255,61,110,.25)"); shake() }
+  },380);
+}
+
+/* ---- fallo final ---- */
+function enterEnd(){
+  stopCaseTimer(); SFX.droneOff(); SFX.end(); BG.mood("end"); BG.confetti();
+  const list=totals(); const me=list.findIndex(p=>p.id===S.me.id);
+  const top=[list[1],list[0],list[2]];
+  const iaBlames=S.players.reduce((n,p)=>n+CASES.filter(c=>(p.a||{})[c.id]&&parseAns(p.a[c.id]).sel.includes(IA_IDX(c))).length,0);
+  stage.innerHTML=`<section class="screen stack">
+    <div class="kicker">FALLO FINAL DEL TRIBUNAL</div>
+    <h2 class="glitch" data-t="SE CIERRA EL JUICIO" style="font-size:clamp(30px,6vw,56px);margin:0;color:#fff">SE CIERRA EL JUICIO</h2>
+    <div data-core=".55" style="height:90px" aria-hidden="true"></div>
+    <div class="podium" id="podium">${top.map((p,k)=>{ const cls=["p2","p1","p3"][k], r=["2","1","3"][k]; return p?`<div class="pod ${cls}"><span class="r">${r}</span><span class="n">${esc(p.nm)}</span><span class="s">${p.score}</span></div>`:`<div class="pod ${cls}" style="opacity:.3"><span class="r">${r}</span><span class="n">—</span></div>` }).join("")}</div>
+    ${me>=0?`<p class="lede" style="font-size:16px">Terminaste en el puesto <b style="color:var(--cyan)">${me+1}</b> de ${list.length}, con <b style="color:var(--cyan)">${list[me].score}</b> puntos.</p>`:""}
+    <div class="panel"><p class="thesis">Veredicto: <b>la IA es inimputable</b>. No es un agente moral: no elige con libertad ni puede rendir cuentas. En los diez casos la responsabilidad fue <b>humana y repartida</b> entre quienes diseñan, venden, autorizan y usan los sistemas.${iaBlames?` Durante la partida el jurado culpó ${iaBlames} ${iaBlames===1?"vez":"veces"} a la IA misma: ¿qué nos dice eso sobre cómo hablamos de la tecnología?`:""}</p></div>
+    <div class="actions">${S.mode!=="player"?`<button class="btn v" id="bAgain" type="button">Nueva partida</button>`:""}<button class="btn ghost" id="bHome" type="button">Volver al inicio</button></div>
+  </section>`;
+  const a=$("#bAgain"); if(a) a.onclick=()=>{ if(S.mode==="solo"){ S.bots.forEach(b=>S.net.setMe({...S.net._pl[b.id],a:{}})) } SFX.gavel(); hostStart() };
+  $("#bHome").onclick=leave;
+}
+function updateEnd(){ /* las sentencias tardías ajustan la tabla, el podio queda */ }
+
+renderIntro(); renderBoard(); updateNetChip();
+</script>
